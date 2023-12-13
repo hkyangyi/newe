@@ -2,8 +2,8 @@ package moddle
 
 import (
 	"errors"
-	"neweadmin/common/base"
-	"neweadmin/common/utils"
+	"newe/common/base"
+	"newe/common/utils"
 )
 
 type SysDictList struct {

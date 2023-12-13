@@ -1,13 +1,13 @@
 package serve
 
 import (
-	"neweadmin/common/base"
-	"neweadmin/common/config"
-	"neweadmin/common/db"
-	"neweadmin/common/ftpmag"
-	"neweadmin/common/redis"
-	"neweadmin/common/worklog"
-	"neweadmin/common/ws"
+	"newe/common/base"
+	"newe/common/config"
+	"newe/common/db"
+	"newe/common/ftpmag"
+	"newe/common/redis"
+	"newe/common/worklog"
+	"newe/common/ws"
 )
 
 type logprint struct {

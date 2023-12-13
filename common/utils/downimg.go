@@ -6,8 +6,8 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"neweadmin/common/base"
-	"neweadmin/common/file"
+	"newe/common/base"
+	"newe/common/file"
 	"os"
 	"time"
 )

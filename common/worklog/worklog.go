@@ -2,7 +2,7 @@ package worklog
 
 import (
 	"fmt"
-	"neweadmin/common/file"
+	"newe/common/file"
 	"sync"
 	"time"
 

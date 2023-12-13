@@ -3,9 +3,9 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"neweadmin/app/common/app"
-	"neweadmin/app/common/system/moddle"
-	"neweadmin/common/utils"
+	"newe/app/common/app"
+	"newe/app/common/system/moddle"
+	"newe/common/utils"
 	"strings"
 
 	"github.com/gin-gonic/gin"

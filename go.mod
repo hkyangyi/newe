@@ -1,4 +1,4 @@
-module neweadmin
+module newe
 
 go 1.20
 

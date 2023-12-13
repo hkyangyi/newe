@@ -3,10 +3,10 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"neweadmin/app/common/app"
-	"neweadmin/app/common/system/moddle"
-	"neweadmin/common/base"
-	"neweadmin/common/utils"
+	"newe/app/common/app"
+	"newe/app/common/system/moddle"
+	"newe/common/base"
+	"newe/common/utils"
 	"strconv"
 	"time"
 

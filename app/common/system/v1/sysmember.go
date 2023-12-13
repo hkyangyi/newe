@@ -2,9 +2,9 @@ package v1
 
 import (
 	"errors"
-	"neweadmin/app/common/app"
-	"neweadmin/app/common/system/moddle"
-	"neweadmin/common/utils"
+	"newe/app/common/app"
+	"newe/app/common/system/moddle"
+	"newe/common/utils"
 	"strings"
 	"time"
 

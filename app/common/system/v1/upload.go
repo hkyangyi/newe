@@ -2,9 +2,9 @@ package v1
 
 import (
 	"errors"
-	"neweadmin/app/common/app"
-	"neweadmin/app/common/system/moddle"
-	"neweadmin/app/common/upload"
+	"newe/app/common/app"
+	"newe/app/common/system/moddle"
+	"newe/app/common/upload"
 
 	"github.com/gin-gonic/gin"
 )

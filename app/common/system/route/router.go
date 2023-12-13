@@ -1,7 +1,7 @@
 package route
 
 import (
-	v1 "neweadmin/app/common/system/v1"
+	v1 "newe/app/common/system/v1"
 
 	"github.com/gin-gonic/gin"
 )

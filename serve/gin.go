@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	roootRouter "neweadmin/app/router"
-	"neweadmin/common/base"
+	roootRouter "newe/app/router"
+	"newe/common/base"
 
 	"github.com/gin-gonic/gin"
 )
