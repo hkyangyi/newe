@@ -2,11 +2,11 @@ package base
 
 import (
 	"fmt"
-	"newe/common/config"
-	"newe/common/ftpmag"
-	"newe/common/redis"
-	"newe/common/worklog"
-	"newe/common/ws"
+	"github.com/hkyangyi/newe/common/config"
+	"github.com/hkyangyi/newe/common/ftpmag"
+	"github.com/hkyangyi/newe/common/redis"
+	"github.com/hkyangyi/newe/common/worklog"
+	"github.com/hkyangyi/newe/common/ws"
 
 	"gorm.io/gorm"
 )

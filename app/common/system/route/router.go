@@ -1,7 +1,7 @@
 package route
 
 import (
-	v1 "newe/app/common/system/v1"
+	v1 "github.com/hkyangyi/newe/app/common/system/v1"
 
 	"github.com/gin-gonic/gin"
 )

@@ -7,9 +7,9 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-var key string = "newetoken"
+var key string = "github.com/hkyangyi/newetoken"
 
-//生成TOken
+// 生成TOken
 func SetToken(uuid string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := make(jwt.MapClaims)
@@ -25,7 +25,7 @@ func SetToken(uuid string) (string, error) {
 	return tokenString, nil
 }
 
-//解析token
+// 解析token
 func AuthToken(tokenString string) (string, bool) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(key), nil

@@ -3,11 +3,11 @@ package utils
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/hkyangyi/newe/common/base"
+	"github.com/hkyangyi/newe/common/file"
 	"io"
 	"mime/multipart"
 	"net/http"
-	"newe/common/base"
-	"newe/common/file"
 	"os"
 	"time"
 )

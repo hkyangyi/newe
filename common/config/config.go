@@ -60,18 +60,18 @@ func (a *Config) Get() error {
 	if b {
 		fmt.Println("初始化配置文件")
 		//默认配置
-		a.HTTP_RunMode = "debug"                  //运行模式debug or release
-		a.HTTP_Port = 80                          //http服务端口
-		a.HTTP_ReadTimeout = 60                   //读取时间
-		a.HTTP_WriteTimeout = 60                  //写入时间
-		a.HTTP_ServeUrl = "http://localhost/"     //服务地址
-		a.HTTP_RuntimeRootPath = "assets/runtime" //日志存储目录
-		a.HTTP_ServeCode = "A"                    //服务器编号
-		a.DB_Type = "mysql"                       //数据链接类型
-		a.DB_User = "root"                        //用户名
-		a.DB_Password = "newe123"                 //newe123
-		a.DB_Host = "127.0.0.1:3306"              //链接地址
-		a.DB_Name = "newe"                        //数据库名
+		a.HTTP_RunMode = "debug"                      //运行模式debug or release
+		a.HTTP_Port = 80                              //http服务端口
+		a.HTTP_ReadTimeout = 60                       //读取时间
+		a.HTTP_WriteTimeout = 60                      //写入时间
+		a.HTTP_ServeUrl = "http://localhost/"         //服务地址
+		a.HTTP_RuntimeRootPath = "assets/runtime"     //日志存储目录
+		a.HTTP_ServeCode = "A"                        //服务器编号
+		a.DB_Type = "mysql"                           //数据链接类型
+		a.DB_User = "root"                            //用户名
+		a.DB_Password = "github.com/hkyangyi/newe123" //github.com/hkyangyi/newe123
+		a.DB_Host = "127.0.0.1:3306"                  //链接地址
+		a.DB_Name = "github.com/hkyangyi/newe"        //数据库名
 		a.DB_TablePrefix = ""
 		a.REDIS_Host = "127.0.0.1:6379"
 		a.REDIS_Password = ""

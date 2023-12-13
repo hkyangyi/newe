@@ -1,9 +1,9 @@
 package v1
 
 import (
-	"newe/app/common/app"
-	"newe/app/common/system/moddle"
-	"newe/common/utils"
+	"github.com/hkyangyi/newe/app/common/app"
+	"github.com/hkyangyi/newe/app/common/system/moddle"
+	"github.com/hkyangyi/newe/common/utils"
 	"strings"
 
 	"github.com/gin-gonic/gin"

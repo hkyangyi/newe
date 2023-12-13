@@ -2,12 +2,12 @@ package upload
 
 import (
 	"fmt"
+	"github.com/hkyangyi/newe/app/common/system/moddle"
+	"github.com/hkyangyi/newe/common/base"
+	"github.com/hkyangyi/newe/common/file"
+	"github.com/hkyangyi/newe/common/utils"
 	"math/rand"
 	"mime/multipart"
-	"newe/app/common/system/moddle"
-	"newe/common/base"
-	"newe/common/file"
-	"newe/common/utils"
 	"os"
 	"path"
 	"strings"

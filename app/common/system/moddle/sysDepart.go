@@ -2,8 +2,8 @@ package moddle
 
 import (
 	"errors"
-	"newe/common/base"
-	"newe/common/utils"
+	"github.com/hkyangyi/newe/common/base"
+	"github.com/hkyangyi/newe/common/utils"
 	"strconv"
 	"strings"
 	"time"

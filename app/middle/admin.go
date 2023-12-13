@@ -2,9 +2,9 @@ package middle
 
 import (
 	"fmt"
-	"newe/app/common/system/moddle"
-	"newe/common/base"
-	"newe/common/utils"
+	"github.com/hkyangyi/newe/app/common/system/moddle"
+	"github.com/hkyangyi/newe/common/base"
+	"github.com/hkyangyi/newe/common/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"

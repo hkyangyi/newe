@@ -2,7 +2,7 @@ package worklog
 
 import (
 	"fmt"
-	"newe/common/file"
+	"github.com/hkyangyi/newe/common/file"
 	"sync"
 	"time"
 

@@ -1,13 +1,13 @@
 package serve
 
 import (
-	"newe/common/base"
-	"newe/common/config"
-	"newe/common/db"
-	"newe/common/ftpmag"
-	"newe/common/redis"
-	"newe/common/worklog"
-	"newe/common/ws"
+	"github.com/hkyangyi/newe/common/base"
+	"github.com/hkyangyi/newe/common/config"
+	"github.com/hkyangyi/newe/common/db"
+	"github.com/hkyangyi/newe/common/ftpmag"
+	"github.com/hkyangyi/newe/common/redis"
+	"github.com/hkyangyi/newe/common/worklog"
+	"github.com/hkyangyi/newe/common/ws"
 )
 
 type logprint struct {

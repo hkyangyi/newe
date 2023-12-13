@@ -1,8 +1,8 @@
 package moddle
 
 import (
-	"newe/common/base"
-	"newe/common/utils"
+	"github.com/hkyangyi/newe/common/base"
+	"github.com/hkyangyi/newe/common/utils"
 )
 
 type SysMember struct {

@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"newe/serve"
+
+	"github.com/hkyangyi/newe/serve"
 )
 
 // @title			NEWE API

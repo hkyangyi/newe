@@ -1,4 +1,4 @@
-module newe
+module github.com/hkyangyi/newe
 
 go 1.20
 

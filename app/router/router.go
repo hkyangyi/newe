@@ -1,9 +1,9 @@
 package router
 
 import (
-	systemrouter "newe/app/common/system/route"
-	v1 "newe/app/common/system/v1"
-	"newe/app/middle"
+	systemrouter "github.com/hkyangyi/newe/app/common/system/route"
+	v1 "github.com/hkyangyi/newe/app/common/system/v1"
+	"github.com/hkyangyi/newe/app/middle"
 
 	"github.com/gin-gonic/gin"
 )
