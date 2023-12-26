@@ -3,12 +3,14 @@ package v1
 import (
 	"encoding/json"
 	"errors"
-	"github.com/hkyangyi/newe/app/common/app"
-	"github.com/hkyangyi/newe/app/common/system/moddle"
-	"github.com/hkyangyi/newe/common/base"
-	"github.com/hkyangyi/newe/common/utils"
 	"strconv"
 	"time"
+
+	"github.com/hkyangyi/newe/app/common/app"
+	"github.com/hkyangyi/newe/app/common/system/moddle"
+	"github.com/hkyangyi/newe/common/db"
+	"github.com/hkyangyi/newe/common/redis"
+	"github.com/hkyangyi/newe/common/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,12 +52,12 @@ func LoginOut(c *gin.Context) {
 		return
 	}
 
-	res := base.REDIS.Exists(uuid)
+	res := redis.REDIS.Exists(uuid)
 	if !res {
 		g.LoginError(nil)
 		return
 	}
-	base.REDIS.Delete(uuid)
+	redis.REDIS.Delete(uuid)
 	g.SUCCESS(nil)
 	return
 }
@@ -67,8 +69,8 @@ func (a *AuthFrom) Login() (map[string]interface{}, error) {
 
 	rediskey := "AUTH_ERROR_COUNT_" + a.Username
 	var LoginErrCount int
-	if base.REDIS.Exists(rediskey) {
-		base.REDIS.Get(rediskey, &LoginErrCount)
+	if redis.REDIS.Exists(rediskey) {
+		redis.REDIS.Get(rediskey, &LoginErrCount)
 	} else {
 		LoginErrCount = 0
 	}
@@ -93,7 +95,7 @@ func (a *AuthFrom) Login() (map[string]interface{}, error) {
 	md5ps := utils.EncodeMD5(a.Password)
 	if md5ps != merdb.Password {
 		LoginErrCount++
-		base.REDIS.Set(rediskey, LoginErrCount, 60*60*24)
+		redis.REDIS.Set(rediskey, LoginErrCount, 60*60*24)
 		return nil, errors.New("密码错误,您还有" + strconv.Itoa(5-LoginErrCount) + "次机会")
 	}
 
@@ -102,7 +104,7 @@ func (a *AuthFrom) Login() (map[string]interface{}, error) {
 	data["usdb"] = merdb
 	authkey := "AUTH_" + utils.GetUUID()
 	token, _ := utils.SetToken(authkey)
-	base.REDIS.Set(authkey, merdb, 60*60)
+	redis.REDIS.Set(authkey, merdb, 60*60)
 	data["token"] = token
 
 	return data, nil
@@ -292,7 +294,7 @@ func Verifysole(c *gin.Context) {
 	where := make(map[string]interface{})
 	where[data.FieldName] = data.Tablevalue
 
-	res := base.VerifyOnly(data.TableName, data.TableId, where)
+	res := db.VerifyOnly(data.TableName, data.TableId, where)
 	if res {
 		a.Error(errors.New("已存在"))
 		return

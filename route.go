@@ -1,4 +1,4 @@
-package serve
+package newe
 
 import (
 	"fmt"
@@ -6,34 +6,16 @@ import (
 	"strings"
 	"time"
 
-	roootRouter "github.com/hkyangyi/newe/app/router"
-	"github.com/hkyangyi/newe/common/base"
-
 	"github.com/gin-gonic/gin"
+	roootRouter "github.com/hkyangyi/newe/app/router"
 )
 
-func InitHttpServe() {
-	gin.SetMode(base.Conf.HTTP_RunMode)
-	routersInit := InitRouter()
-	readTimeout := time.Duration(int64(base.Conf.HTTP_ReadTimeout)) * time.Second
-	writeTimeout := time.Duration(int64(base.Conf.HTTP_WriteTimeout)) * time.Second
-	endPoint := fmt.Sprintf(":%d", base.Conf.HTTP_Port)
-	maxHeaderBytes := 1 << 20
-	Server := &http.Server{
-		Addr:           endPoint,
-		Handler:        routersInit,
-		ReadTimeout:    readTimeout,
-		WriteTimeout:   writeTimeout,
-		MaxHeaderBytes: maxHeaderBytes,
-	}
-	fmt.Printf("[info] start http server listening %s", endPoint)
-	Server.ListenAndServe()
-}
+var Route *gin.Engine
 
-func InitRouter() *gin.Engine {
-	r := gin.New()
-	r.Use(gin.Logger())
-	r.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+func RouteInit() {
+	Route = gin.New()
+	Route.Use(gin.Logger())
+	Route.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
 		// 你的自定义格式
 		str := fmt.Sprintf("%s - [%s] \"%s %s %s %d %s \"%s\" %s\"\n",
 			param.ClientIP,
@@ -46,14 +28,21 @@ func InitRouter() *gin.Engine {
 			param.Request.UserAgent(),
 			param.ErrorMessage,
 		)
-		base.WorkLog.WTRACE(str)
+		WorkLog.WTRACE(str)
 		return str
 	}))
-	r.Use(gin.Recovery())
-	r.StaticFS("/upload/images", http.Dir(base.Conf.IMG_SavePath))  //文件目录
-	r.StaticFS("/upload/fields", http.Dir(base.Conf.FILE_SavePath)) //文件目录
-	r.Use(Cors())
+	Route.Use(gin.Recovery())
+	Route.StaticFS("/upload/images", http.Dir(Conf.IMG_SavePath))  //文件目录
+	Route.StaticFS("/upload/fields", http.Dir(Conf.FILE_SavePath)) //文件目录
+	Route.Use(Cors())
+	//初始化系统路由
+	r := NewRoute("newesys")
+	fmt.Println(r)
 	roootRouter.RegRouter(r)
+}
+
+func NewRoute(path string, handlers ...gin.HandlerFunc) *gin.RouterGroup {
+	r := Route.Group(path, handlers...)
 	return r
 }
 

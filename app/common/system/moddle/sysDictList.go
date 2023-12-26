@@ -2,7 +2,8 @@ package moddle
 
 import (
 	"errors"
-	"github.com/hkyangyi/newe/common/base"
+
+	"github.com/hkyangyi/newe/common/db"
 	"github.com/hkyangyi/newe/common/utils"
 )
 
@@ -20,7 +21,7 @@ type SysDictList struct {
 // 添加
 func (a *SysDictList) Add() error {
 	a.ID = utils.GetUUID()
-	err := base.MYDB.Create(a).Error
+	err := db.Db.Create(a).Error
 	return err
 }
 
@@ -29,14 +30,14 @@ func (a *SysDictList) Edit() error {
 	if len(a.ID) != 32 {
 		return errors.New("缺乏参数ID")
 	}
-	err := base.MYDB.Model(a).Updates(a).Error
+	err := db.Db.Model(a).Updates(a).Error
 	return err
 }
 
 // 获取列表
 func (a *SysDictList) GetList(page utils.PageList, where string, v ...interface{}) utils.PageList {
 	var items []SysDictList
-	base.MYDB.Model(&SysDictList{}).Where(where, v...).Count(&page.Total).Order("sort asc").Offset(page.GetOffice()).Limit(page.PageSize).Find(&items)
+	db.Db.Model(&SysDictList{}).Where(where, v...).Count(&page.Total).Order("sort asc").Offset(page.GetOffice()).Limit(page.PageSize).Find(&items)
 	page.List = items
 	return page
 }
@@ -46,14 +47,14 @@ func (a *SysDictList) Del() error {
 	if len(a.ID) != 32 {
 		return errors.New("缺乏参数ID")
 	}
-	base.MYDB.Model(&SysDictList{}).Where("parent_id = ?", a.ID).Delete(&SysDictList{})
-	err := base.MYDB.Model(a).Delete(a).Error
+	db.Db.Model(&SysDictList{}).Where("parent_id = ?", a.ID).Delete(&SysDictList{})
+	err := db.Db.Model(a).Delete(a).Error
 	return err
 }
 
 func GetDictByParent(parent string) []SysDictList {
 	var items []SysDictList
-	base.MYDB.Model(&SysDictList{}).Where("parent_id = ?", parent).Find(&items)
+	db.Db.Model(&SysDictList{}).Where("parent_id = ?", parent).Find(&items)
 	return items
 }
 
@@ -65,8 +66,8 @@ type dictlist struct {
 
 func (a *SysDictList) GetByCode() []dictlist {
 	var fdb SysDictList
-	base.MYDB.Model(&fdb).Where("parent_name = ?", a.ParentName).First(&fdb)
+	db.Db.Model(&fdb).Where("parent_name = ?", a.ParentName).First(&fdb)
 	var items []dictlist
-	base.MYDB.Table("sys_dict_list").Select("id,name ,value").Where("parent_id = ?", fdb.ID).Find(&items)
+	db.Db.Table("sys_dict_list").Select("id,name ,value").Where("parent_id = ?", fdb.ID).Find(&items)
 	return items
 }

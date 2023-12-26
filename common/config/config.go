@@ -1,13 +1,9 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
-	"log"
 	"os"
-	"reflect"
-	"strconv"
-
-	"gopkg.in/ini.v1"
 )
 
 type Config struct {
@@ -19,137 +15,95 @@ type Config struct {
 	HTTP_RuntimeRootPath string //日志存储目录
 	HTTP_ServeCode       string //服务器编号
 
-	DB_Type        string
-	DB_User        string
-	DB_Password    string
-	DB_Host        string
-	DB_Name        string
-	DB_TablePrefix string
+	DB_Type        string //数据库类型
+	DB_User        string //用户名
+	DB_Password    string //密码
+	DB_Host        string //链接
+	DB_Name        string //数据库名称
+	DB_TablePrefix string // 前缀
 
-	REDIS_Host        string
-	REDIS_Password    string
-	REDIS_MaxIdle     int
-	REDIS_MaxActive   int
-	REDIS_IdleTimeout int
+	REDIS_Host        string //redis 链接
+	REDIS_Password    string //redis 密码
+	REDIS_MaxIdle     int    // 最大空闲
+	REDIS_MaxActive   int    //最大连接数
+	REDIS_IdleTimeout int    //空闲超时
 
-	IMG_PrefixUrl string
-	IMG_SavePath  string
-	IMG_MaxSize   int
-	IMG_AllowExts string
+	IMG_PrefixUrl string //图片url前缀
+	IMG_SavePath  string //图片保存路径
+	IMG_MaxSize   int    //最大图片大小
+	IMG_AllowExts string //图片格式
 
-	FILE_PrefixUrl string
-	FILE_SavePath  string
-	FILE_MaxSize   int
-	FILE_AllowExts string
+	FILE_PrefixUrl string //文件前缀
+	FILE_SavePath  string //文件保存路径
+	FILE_MaxSize   int    //文件最大限制
+	FILE_AllowExts string //文件格式
 }
 
-func GetConfig() *Config {
-	var data = Config{}
-	err := data.Get()
-	if err != nil {
-		panic(err)
-	}
-	return &data
-}
+var Conf = &Config{}
 
-func (a *Config) Get() error {
-	path := "assets/config/config.ini"
+func ReadConfig() *Config {
+	path := "assets/config/config.json"
+
 	_, err := os.Stat(path)
 	b := os.IsNotExist(err)
-
 	if b {
 		fmt.Println("初始化配置文件")
 		//默认配置
-		a.HTTP_RunMode = "debug"                      //运行模式debug or release
-		a.HTTP_Port = 80                              //http服务端口
-		a.HTTP_ReadTimeout = 60                       //读取时间
-		a.HTTP_WriteTimeout = 60                      //写入时间
-		a.HTTP_ServeUrl = "http://localhost/"         //服务地址
-		a.HTTP_RuntimeRootPath = "assets/runtime"     //日志存储目录
-		a.HTTP_ServeCode = "A"                        //服务器编号
-		a.DB_Type = "mysql"                           //数据链接类型
-		a.DB_User = "root"                            //用户名
-		a.DB_Password = "github.com/hkyangyi/newe123" //github.com/hkyangyi/newe123
-		a.DB_Host = "127.0.0.1:3306"                  //链接地址
-		a.DB_Name = "github.com/hkyangyi/newe"        //数据库名
-		a.DB_TablePrefix = ""
-		a.REDIS_Host = "127.0.0.1:6379"
-		a.REDIS_Password = ""
-		a.REDIS_MaxIdle = 2       //最大空闲连接数
-		a.REDIS_MaxActive = 10    // #在给定时间内，允许分配的最大连接数（当为零时，没有限制）
-		a.REDIS_IdleTimeout = 200 // #在给定时间内将会保持空闲状态，若到达时间限制则关闭连接（当为零时，没有限制）
-
-		a.IMG_PrefixUrl = "" //图片访问URL
-
-		a.IMG_SavePath = "" //图片上传地址
-
-		a.IMG_MaxSize = 2097152 //#图片最大
-
-		a.IMG_AllowExts = "" //#图片格式
-
-		a.FILE_PrefixUrl = "" //文件访问URL前缀
-
-		a.FILE_SavePath = "" //文件保存目录
-
-		a.FILE_MaxSize = 2097152 //#文件最大
-		a.FILE_AllowExts = ""    //#文件格式
-		//datamap := Struct2Map(*a)
-
-		err := os.MkdirAll("assets/config/", os.ModePerm)
-		if err != nil && !os.IsExist(err) {
-			fmt.Println(err)
-			return err
-		}
-		err = os.WriteFile(path, []byte("#配置文件"), os.ModePerm)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-		cfg, err := ini.Load(path)
-		if err != nil {
-			log.Fatalf("创建配置文件失败")
-			return err
-		}
-		err = cfg.ReflectFrom(a)
-		fmt.Println(err)
-		cfg.SaveTo(path)
+		Conf.HTTP_RunMode = "debug"                      //运行模式debug or release
+		Conf.HTTP_Port = 80                              //http服务端口
+		Conf.HTTP_ReadTimeout = 60                       //读取时间
+		Conf.HTTP_WriteTimeout = 60                      //写入时间
+		Conf.HTTP_ServeUrl = "http://localhost/"         //服务地址
+		Conf.HTTP_RuntimeRootPath = "assets/runtime"     //日志存储目录
+		Conf.HTTP_ServeCode = "A"                        //服务器编号
+		Conf.DB_Type = "mysql"                           //数据链接类型
+		Conf.DB_User = "root"                            //用户名
+		Conf.DB_Password = "github.com/hkyangyi/newe123" //github.com/hkyangyi/newe123
+		Conf.DB_Host = "127.0.0.1:3306"                  //链接地址
+		Conf.DB_Name = "github.com/hkyangyi/newe"        //数据库名
+		Conf.DB_TablePrefix = ""
+		Conf.REDIS_Host = "127.0.0.1:6379"
+		Conf.REDIS_Password = ""
+		Conf.REDIS_MaxIdle = 2       //最大空闲连接数
+		Conf.REDIS_MaxActive = 10    // #在给定时间内，允许分配的最大连接数（当为零时，没有限制）
+		Conf.REDIS_IdleTimeout = 200 // #在给定时间内将会保持空闲状态，若到达时间限制则关闭连接（当为零时，没有限制）
+		Conf.IMG_PrefixUrl = ""      //图片访问URL
+		Conf.IMG_SavePath = ""       //图片上传地址
+		Conf.IMG_MaxSize = 2097152   //#图片最大
+		Conf.IMG_AllowExts = ""      //#图片格式
+		Conf.FILE_PrefixUrl = ""     //文件访问URL前缀
+		Conf.FILE_SavePath = ""      //文件保存目录
+		Conf.FILE_MaxSize = 2097152  //#文件最大
+		Conf.FILE_AllowExts = ""     //#文件格式
+		Conf.Write()
 
 	} else {
-		fmt.Println("读取配置文件")
-		cfg, err := ini.Load(path)
-		if err != nil {
-			return err
-		}
-		err = cfg.MapTo(a)
-		if err != nil {
+		// 打开文件
+		file, _ := os.Open("assets/config/config.json")
+		// 关闭文件
+		defer file.Close()
 
-			return err
+		err := json.NewDecoder(file).Decode(Conf)
+		if err != nil {
+			fmt.Println("Error:", err)
 		}
+		fmt.Println(Conf)
 	}
-	return nil
+
+	return Conf
 }
 
-func Struct2Map(obj interface{}) map[string]interface{} {
-	t := reflect.TypeOf(obj)
-	v := reflect.ValueOf(obj)
+func (c *Config) Write() {
 
-	var data = make(map[string]interface{})
-	for i := 0; i < t.NumField(); i++ {
-		data[t.Field(i).Name] = v.Field(i).Interface()
+	jsonData, err := json.Marshal(c)
+	if err != nil {
+		fmt.Println("JSON marshal error:", err)
+		return
 	}
-	return data
-}
-
-func WriteTo(s *ini.Section, obj map[string]interface{}) {
-	for k, v := range obj {
-		var val string
-
-		if reflect.TypeOf(v).Name() == "int" {
-			va := v.(int)
-			val = strconv.Itoa(va)
-		} else {
-			val = v.(string)
-		}
-		s.NewKey(k, val)
+	err = os.WriteFile("assets/config/config.json", jsonData, 0644)
+	if err != nil {
+		fmt.Println("Write file error:", err)
+		return
 	}
+	fmt.Println("Struct successfully converted to JSON and written to file.")
 }

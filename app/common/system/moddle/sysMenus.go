@@ -2,10 +2,11 @@ package moddle
 
 import (
 	"errors"
-	"github.com/hkyangyi/newe/common/base"
-	"github.com/hkyangyi/newe/common/utils"
 	"strings"
 	"time"
+
+	"github.com/hkyangyi/newe/common/db"
+	"github.com/hkyangyi/newe/common/utils"
 )
 
 type SysMenus struct {
@@ -33,7 +34,7 @@ type SysMenus struct {
 func (a *SysMenus) Add() error {
 	a.ID = utils.GetUUID()
 	a.CreateTime = time.Now().Unix()
-	err := base.MYDB.Create(a).Error
+	err := db.Db.Create(a).Error
 	return err
 }
 
@@ -41,7 +42,7 @@ func (a *SysMenus) Edit() error {
 	if len(a.ID) != 32 {
 		return errors.New("缺少参数ID")
 	}
-	err := base.MYDB.Updates(a).Error
+	err := db.Db.Updates(a).Error
 	return err
 }
 
@@ -49,33 +50,33 @@ func (a *SysMenus) Del() error {
 	if len(a.ID) != 32 {
 		return errors.New("缺少参数ID")
 	}
-	err := base.MYDB.Model(a).Delete(a).Error
+	err := db.Db.Model(a).Delete(a).Error
 	return err
 }
 
 func GetMenusList() []SysMenus {
 	var items []SysMenus
-	base.MYDB.Where("type <> ?", 3).Order("sort_no asc").Find(&items)
+	db.Db.Where("type <> ?", 3).Order("sort_no asc").Find(&items)
 	return items
 }
 
 // 根据部门ID获取菜单
 func SysMenusListGetByDepart(departId string) []SysMenus {
 	var items []SysDepartRules
-	base.MYDB.Model(&items).Where("depart_id = ?", departId).Find(&items)
+	db.Db.Model(&items).Where("depart_id = ?", departId).Find(&items)
 	var meuls []string
 	for _, v := range items {
 		meuls = append(meuls, v.MenuId)
 	}
 
 	var res []SysMenus
-	base.MYDB.Model(&SysMenus{}).Where("type <> ?", 3).Where("id in ?", meuls).Where("status = ?", 1).Order("sort_no asc").Find(&res)
+	db.Db.Model(&SysMenus{}).Where("type <> ?", 3).Where("id in ?", meuls).Where("status = ?", 1).Order("sort_no asc").Find(&res)
 	return res
 }
 
 func SysButtonGetList() []string {
 	var items []SysMenus
-	base.MYDB.Where("type = ?", 3).Order("sort_no asc").Find(&items)
+	db.Db.Where("type = ?", 3).Order("sort_no asc").Find(&items)
 
 	var btns []string
 	for _, v := range items {
@@ -88,13 +89,13 @@ func SysButtonGetList() []string {
 // 获取按钮
 func SysButtonGetByDepart(departId string) []string {
 	var items []SysDepartRules
-	base.MYDB.Model(&items).Where("depart_id = ?", departId).Find(&items)
+	db.Db.Model(&items).Where("depart_id = ?", departId).Find(&items)
 	var meuls []string
 	for _, v := range items {
 		meuls = append(meuls, v.MenuId)
 	}
 	var res []SysMenus
-	base.MYDB.Where("type = ?", 3).Where("id in ?", meuls).Where("status = ?", 1).Order("sort_no asc").Find(&res)
+	db.Db.Where("type = ?", 3).Where("id in ?", meuls).Where("status = ?", 1).Order("sort_no asc").Find(&res)
 
 	var btns []string
 	for _, v := range res {
@@ -106,7 +107,7 @@ func SysButtonGetByDepart(departId string) []string {
 
 func (a *SysMenus) GetList(where string, v ...interface{}) []SysMenus {
 	var items []SysMenus
-	base.MYDB.Table("sys_menus").Where(where, v...).Order("sort_no asc").Find(&items)
+	db.Db.Table("sys_menus").Where(where, v...).Order("sort_no asc").Find(&items)
 	t := strings.Index(where, "name")
 	if t >= 0 {
 		return items

@@ -2,10 +2,12 @@ package middle
 
 import (
 	"fmt"
-	"github.com/hkyangyi/newe/app/common/system/moddle"
-	"github.com/hkyangyi/newe/common/base"
-	"github.com/hkyangyi/newe/common/utils"
 	"time"
+
+	"github.com/hkyangyi/newe/app/common/system/moddle"
+	"github.com/hkyangyi/newe/common/redis"
+	"github.com/hkyangyi/newe/common/utils"
+	"github.com/hkyangyi/newe/common/worklog"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,10 +39,20 @@ func AdminAuth() gin.HandlerFunc {
 		// 	}
 		// }
 		token := c.GetHeader("Authorization")
+		if token == "" {
+			c.JSON(401, Response{
+				Code:      10000,
+				Message:   "登录超时1",
+				Result:    nil,
+				Success:   "fail",
+				Timestamp: time.Now().Unix(),
+			})
+			c.Abort()
+		}
 		uuid, err := utils.AuthToken(token)
 
 		if !err {
-			base.WorkLog.WERR(err)
+			worklog.Logio.WERR(err)
 			c.JSON(401, Response{
 				Code:      10000,
 				Message:   "登录超时1",
@@ -53,7 +65,7 @@ func AdminAuth() gin.HandlerFunc {
 		}
 		fmt.Printf("middle AdminMid uuid：%s uid \n", uuid)
 		//检测KEY是否在缓存中
-		res := base.REDIS.Exists(uuid)
+		res := redis.REDIS.Exists(uuid)
 
 		if !res {
 			c.JSON(401, Response{
@@ -68,7 +80,7 @@ func AdminAuth() gin.HandlerFunc {
 		}
 		//从缓存中拿取数据
 		var data moddle.SysMember
-		errs := base.REDIS.Get(uuid, &data)
+		errs := redis.REDIS.Get(uuid, &data)
 		if errs != nil {
 			c.JSON(401, Response{
 				Code:      10000,
@@ -81,7 +93,7 @@ func AdminAuth() gin.HandlerFunc {
 			return
 		}
 		//data.Refresh()
-		base.REDIS.Set(uuid, data, 3600)
+		redis.REDIS.Set(uuid, data, 3600)
 		c.Set("AdminAuthData", data)
 
 		c.Next()

@@ -2,16 +2,17 @@ package upload
 
 import (
 	"fmt"
-	"github.com/hkyangyi/newe/app/common/system/moddle"
-	"github.com/hkyangyi/newe/common/base"
-	"github.com/hkyangyi/newe/common/file"
-	"github.com/hkyangyi/newe/common/utils"
 	"math/rand"
 	"mime/multipart"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/hkyangyi/newe/app/common/system/moddle"
+	"github.com/hkyangyi/newe/common/config"
+	"github.com/hkyangyi/newe/common/file"
+	"github.com/hkyangyi/newe/common/utils"
 )
 
 type Field struct {
@@ -27,13 +28,13 @@ type Field struct {
 // 生成图片路径
 func (a *Field) GetPath() string {
 	now := time.Now().Format("20060102")
-	a.Path = base.Conf.IMG_SavePath + "/admin" + "/" + now + "/"
+	a.Path = config.Conf.IMG_SavePath + "/admin" + "/" + now + "/"
 	return a.Path
 }
 
 func (a *Field) GetUrl() string {
 	now := time.Now().Format("20060102")
-	a.Url = base.Conf.IMG_PrefixUrl + "/admin" + "/" + now + "/" + a.Name
+	a.Url = config.Conf.IMG_PrefixUrl + "/admin" + "/" + now + "/" + a.Name
 	return a.Url
 }
 
@@ -68,7 +69,7 @@ func RandomStr(length int) string {
 // 检查图片后缀
 func (a *Field) CheckImageExt() bool {
 	ext := file.GetExt(a.Header.Filename)
-	for _, allowExt := range strings.Split(base.Conf.IMG_AllowExts, ",") {
+	for _, allowExt := range strings.Split(config.Conf.IMG_AllowExts, ",") {
 		if strings.ToUpper(allowExt) == strings.ToUpper(ext) {
 			return true
 		}
@@ -80,7 +81,7 @@ func (a *Field) CheckImageExt() bool {
 func (a *Field) CheckImageSize() bool {
 	a.Size = a.Header.Size
 	size := int(a.Size)
-	return size <= base.Conf.IMG_MaxSize
+	return size <= config.Conf.IMG_MaxSize
 }
 
 // 检查图
@@ -119,8 +120,8 @@ func (a *Field) ImagesSave() {
 // 生成图片路径
 func (a *Field) GetFieldPath() string {
 	now := time.Now().Format("20060102")
-	a.Path = base.Conf.IMG_SavePath + "/" + a.Usdb.ID + "/" + now + "/"
-	a.Url = base.Conf.IMG_PrefixUrl + "/" + a.Usdb.ID + "/" + now + "/" + a.Name
+	a.Path = config.Conf.IMG_SavePath + "/" + a.Usdb.ID + "/" + now + "/"
+	a.Url = config.Conf.IMG_PrefixUrl + "/" + a.Usdb.ID + "/" + now + "/" + a.Name
 	return a.Path
 }
 
@@ -135,5 +136,5 @@ func (a *Field) GetFieldName() string {
 func (a *Field) CheckFieldSize() bool {
 	a.Size = a.Header.Size
 	size := int(a.Size)
-	return size <= base.Conf.IMG_MaxSize
+	return size <= config.Conf.IMG_MaxSize
 }

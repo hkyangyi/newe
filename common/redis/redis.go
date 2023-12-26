@@ -14,13 +14,15 @@ type NeRedis struct {
 	Status bool
 }
 
+var REDIS *NeRedis
+
 var ctx = context.Background()
 
 func NewRedis(host, pass string, idtime, maxid, maxac int) (*NeRedis, error) {
-	var neredis = NeRedis{}
+	REDIS = &NeRedis{}
 
 	// 创建Redis连接池
-	neredis.Conn = redis.NewClient(&redis.Options{
+	REDIS.Conn = redis.NewClient(&redis.Options{
 		Addr:     host,
 		Password: pass, // 如果有密码，可以在这里设置
 		DB:       0,    // 选择要使用的Redis数据库
@@ -28,38 +30,14 @@ func NewRedis(host, pass string, idtime, maxid, maxac int) (*NeRedis, error) {
 	})
 
 	// 连接测活
-	_, err := neredis.Conn.Ping(ctx).Result()
+	_, err := REDIS.Conn.Ping(ctx).Result()
 	if err != nil {
 		panic(err)
 	}
-	neredis.Status = true
+	REDIS.Status = true
 	fmt.Println("连接Redis成功")
-
-	// neredis.Conn = &redis.Pool{
-	// 	MaxIdle:     maxid,
-	// 	MaxActive:   maxac,
-	// 	IdleTimeout: time.Duration(idtime),
-	// 	Dial: func() (redis.Conn, error) {
-	// 		c, err := redis.Dial("tcp", host)
-	// 		if err != nil {
-	// 			return nil, err
-	// 		}
-	// 		if pass != "" {
-	// 			if _, err := c.Do("AUTH", pass); err != nil {
-	// 				c.Close()
-	// 				neredis.Status = false
-	// 				return nil, err
-	// 			}
-	// 		}
-	// 		return c, err
-	// 	},
-	// 	TestOnBorrow: func(c redis.Conn, t time.Time) error {
-	// 		_, err := c.Do("PING")
-	// 		return err
-	// 	},
-	// }
-	neredis.Status = true
-	return &neredis, nil
+	REDIS.Status = true
+	return REDIS, nil
 }
 
 // 设置缓存

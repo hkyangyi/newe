@@ -2,8 +2,8 @@ package base
 
 import (
 	"fmt"
+
 	"github.com/hkyangyi/newe/common/config"
-	"github.com/hkyangyi/newe/common/ftpmag"
 	"github.com/hkyangyi/newe/common/redis"
 	"github.com/hkyangyi/newe/common/worklog"
 	"github.com/hkyangyi/newe/common/ws"
@@ -16,7 +16,6 @@ var (
 	WorkLog *worklog.WorkLog
 	MYDB    *gorm.DB
 	REDIS   *redis.NeRedis
-	FtpMag  *ftpmag.FtpMag
 	WSMAG   *ws.WsManager
 )
 

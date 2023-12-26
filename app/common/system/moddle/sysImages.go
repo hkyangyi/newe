@@ -1,7 +1,7 @@
 package moddle
 
 import (
-	"github.com/hkyangyi/newe/common/base"
+	"github.com/hkyangyi/newe/common/db"
 	"github.com/hkyangyi/newe/common/utils"
 )
 
@@ -18,7 +18,7 @@ type SysImages struct {
 // 获取图片列表
 func ImagesGetList(pl utils.PageList, departId string) (utils.PageList, error) {
 	var items []SysImages
-	err := base.MYDB.Model(SysImages{}).Order("create_time desc").Count(&pl.Total).Offset(pl.GetOffice()).Limit(pl.PageSize).Find(&items).Error
+	err := db.Db.Model(SysImages{}).Order("create_time desc").Count(&pl.Total).Offset(pl.GetOffice()).Limit(pl.PageSize).Find(&items).Error
 	pl.List = items
 	return pl, err
 }
@@ -26,6 +26,6 @@ func ImagesGetList(pl utils.PageList, departId string) (utils.PageList, error) {
 // 添加图片
 func ImagesAdd(data SysImages) error {
 	data.ID = utils.GetUUID()
-	err := base.MYDB.Create(&data).Error
+	err := db.Db.Create(&data).Error
 	return err
 }

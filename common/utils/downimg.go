@@ -3,13 +3,14 @@ package utils
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/hkyangyi/newe/common/base"
-	"github.com/hkyangyi/newe/common/file"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/hkyangyi/newe/common/config"
+	"github.com/hkyangyi/newe/common/file"
 )
 
 func DownImg(url string) (string, error) {
@@ -43,9 +44,9 @@ func DownImg(url string) (string, error) {
 
 	//生产图片保存地址
 	now := time.Now().Format("20060102")
-	path := base.Conf.IMG_SavePath + "/hikimg" + "/" + now + "/"
+	path := config.Conf.IMG_SavePath + "/hikimg" + "/" + now + "/"
 	filename := GetUUID() + ".jpg"
-	imgurl := base.Conf.IMG_PrefixUrl + "/hikimg" + "/" + now + "/" + filename
+	imgurl := config.Conf.IMG_PrefixUrl + "/hikimg" + "/" + now + "/" + filename
 
 	dir, err := os.Getwd()
 	if err != nil {
@@ -76,9 +77,9 @@ func WriteImg(src multipart.File) (string, error) {
 
 	//生产图片保存地址
 	now := time.Now().Format("20060102")
-	path := base.Conf.IMG_SavePath + "/hongmo" + "/" + now + "/"
+	path := config.Conf.IMG_SavePath + "/hongmo" + "/" + now + "/"
 	filename := GetUUID() + ".jpg"
-	imgurl := base.Conf.IMG_PrefixUrl + "/hongmo" + "/" + now + "/" + filename
+	imgurl := config.Conf.IMG_PrefixUrl + "/hongmo" + "/" + now + "/" + filename
 
 	dir, err := os.Getwd()
 	if err != nil {

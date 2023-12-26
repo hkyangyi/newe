@@ -3,12 +3,13 @@ package db
 import (
 	"context"
 	"fmt"
-	"github.com/hkyangyi/newe/common/base"
 	"log"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hkyangyi/newe/common/worklog"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -21,7 +22,7 @@ type logprint struct {
 
 // 写入数据库日志
 func (a logprint) Printf(s string, v ...interface{}) {
-	base.WorkLog.TRACE.Printf(s, v...)
+	worklog.Logio.TRACE.Printf(s, v...)
 }
 
 var (
@@ -78,7 +79,7 @@ func DictStr(db *gorm.DB) {
 					if len(cso) != 2 {
 						break
 					}
-					dict := base.GetDict(cso[1])
+					dict := GetDict(cso[1])
 
 					for i := 0; i < db.Statement.ReflectValue.Len(); i++ {
 						//从字段中获取数值
@@ -120,7 +121,7 @@ func DictStr(db *gorm.DB) {
 					if len(cso) != 2 {
 						break
 					}
-					dict := base.GetDict(cso[1])
+					dict := GetDict(cso[1])
 					//从字段中获取数值
 					if fieldValue, isZero := field.ValueOf(context.Background(), db.Statement.ReflectValue); !isZero {
 						//设置新的值

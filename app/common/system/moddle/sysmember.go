@@ -1,7 +1,7 @@
 package moddle
 
 import (
-	"github.com/hkyangyi/newe/common/base"
+	"github.com/hkyangyi/newe/common/db"
 	"github.com/hkyangyi/newe/common/utils"
 )
 
@@ -29,56 +29,56 @@ type SysMember struct {
 // 添加
 func (a *SysMember) Add() error {
 	a.ID = utils.GetUUID()
-	err := base.MYDB.Create(a).Error
+	err := db.Db.Create(a).Error
 	return err
 }
 
 // 编辑
 func (a *SysMember) Edit() error {
-	err := base.MYDB.Model(a).Updates(a).Error
+	err := db.Db.Model(a).Updates(a).Error
 	return err
 }
 
 // 获取列表
 func (a *SysMember) GetList(page utils.PageList, where string, v ...interface{}) utils.PageList {
 	var items []SysMember
-	base.MYDB.Model(&SysMember{}).Where(where, v...).Count(&page.Total).Order("create_time desc").Offset(page.GetOffice()).Limit(page.PageSize).Find(&items)
+	db.Db.Model(&SysMember{}).Where(where, v...).Count(&page.Total).Order("create_time desc").Offset(page.GetOffice()).Limit(page.PageSize).Find(&items)
 	page.List = items
 	return page
 }
 
 // 删除
 func (a *SysMember) Del() error {
-	err := base.MYDB.Model(a).Delete(a).Error
+	err := db.Db.Model(a).Delete(a).Error
 	return err
 }
 
 // 用户名查询
 func FindMemberByUsername(username string) (SysMember, error) {
 	var data SysMember
-	err := base.MYDB.Model(&data).Where("username = ?", username).First(&data).Error
+	err := db.Db.Model(&data).Where("username = ?", username).First(&data).Error
 	return data, err
 }
 
 func (a *SysMember) Refresh() {
-	base.MYDB.First(a)
+	db.Db.First(a)
 }
 
 // 关键词搜索
 func GetSysMemberByKeyword(keyword, orgcode string) []SysMember {
 	var items []SysMember
-	base.MYDB.Model(&SysMember{}).Where("realname like ?", "%"+keyword+"%").Where("org_code like ?", orgcode+"%").Limit(10).Find(&items)
+	db.Db.Model(&SysMember{}).Where("realname like ?", "%"+keyword+"%").Where("org_code like ?", orgcode+"%").Limit(10).Find(&items)
 	return items
 }
 
 // ORG搜索
 func GetSysMemberByOrg(orgcode string) []SysMember {
 	var items []SysMember
-	base.MYDB.Model(&SysMember{}).Where("org_code like ?", orgcode+"%").Find(&items)
+	db.Db.Model(&SysMember{}).Where("org_code like ?", orgcode+"%").Find(&items)
 	return items
 }
 
 func (a *SysMember) EditPass(pass string) error {
-	err := base.MYDB.Model(a).Update("password", pass).Error
+	err := db.Db.Model(a).Update("password", pass).Error
 	return err
 }

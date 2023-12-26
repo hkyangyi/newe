@@ -2,9 +2,10 @@ package worklog
 
 import (
 	"fmt"
-	"github.com/hkyangyi/newe/common/file"
 	"sync"
 	"time"
+
+	"github.com/hkyangyi/newe/common/file"
 
 	"github.com/aiwuTech/fileLogger"
 )
@@ -19,17 +20,19 @@ type WorkLog struct {
 	TRACE    *fileLogger.FileLogger
 }
 
+var Logio *WorkLog
+
 func WorkLogInit(path string) *WorkLog {
 	file.IsNotExistMkDir(path)
-	var wl = WorkLog{
+	Logio = &WorkLog{
 		Path:    path,
 		LOGTIME: time.Now().Format("20060102"),
 		WG:      new(sync.WaitGroup),
 	}
-	wl.WG.Add(1)
-	wl.NewFile()
+	Logio.WG.Add(1)
+	Logio.NewFile()
 
-	return &wl
+	return Logio
 }
 
 func (a *WorkLog) NewFile() {

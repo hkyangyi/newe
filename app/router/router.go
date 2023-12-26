@@ -16,9 +16,9 @@ import (
 //	@Produce		json
 //	@Router			/api/v1/
 
-func RegRouter(r *gin.Engine) {
-	api := r.Group("api")
-	admin := api.Group("admin")
+func RegRouter(r *gin.RouterGroup) {
+	// api := r.Group("api")
+	admin := r.Group("admin")
 
 	admin.POST("login", v1.Login)
 	admin.GET("loginOut", v1.LoginOut)
