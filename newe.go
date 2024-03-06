@@ -41,6 +41,6 @@ func Run() {
 	WSMAG = ws.NewMag()
 	go WSMAG.SetUp()
 	//读取字典写入REDIS
-	go DictInit()
+	//go DictInit()
 	HttpServeRun()
 }

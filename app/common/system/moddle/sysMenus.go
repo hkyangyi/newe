@@ -28,6 +28,7 @@ type SysMenus struct {
 	RouteName  string     `json:"routeName"`                         //路由名称
 	Redirect   string     `json:"redirect"`                          //默认页
 	Props      string     `json:"props"`
+	Bindapi    int        `json:"bindapi"`
 	List       []SysMenus `gorm:"-" json:"children"`
 }
 

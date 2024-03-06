@@ -63,6 +63,7 @@ func GormInit(host, user, pass, name string) *gorm.DB {
 	// SetConnMaxLifetime 设置了连接可复用的最大时间。
 	sqlDB.SetConnMaxLifetime(time.Hour)
 	Db = db.Debug()
+	go DictInit()
 	return Db
 }
 

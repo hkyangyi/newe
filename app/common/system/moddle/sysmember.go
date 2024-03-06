@@ -8,6 +8,7 @@ import (
 type SysMember struct {
 	ID         string `gorm:"primary_key" json:"id"`    //
 	DepartId   string `json:"departId" form:"departId"` //组织结构ID
+	RoleId     string `json:"roleId" form:"roleId"`
 	UID        string `json:"uid"`                      //会员ID
 	Username   string `json:"username" form:"username"` //登陆账号
 	Password   string `json:"password"`                 //密码

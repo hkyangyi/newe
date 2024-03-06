@@ -24,10 +24,12 @@ func RegRouter(r *gin.RouterGroup) {
 	admin.GET("loginOut", v1.LoginOut)
 	admin.POST("createMenu", v1.CreateMenu)
 	admin.GET("dict", v1.GetDictByCode)
+	admin.GET("GetRoleByDepart", v1.GetRoleByDepart)
 	//中间件验证登录
 	admin.Use(middle.AdminAuth())
 	admin.POST("upload", v1.UpImage)
 	admin.GET("verifysole", v1.Verifysole)
+	admin.GET("GetMenuTree", v1.BaseGetMenuTree)
 	admin.GET("getUserInfo", v1.GetUserInfo)
 	admin.GET("getPermCode", v1.GetPermCode)
 	admin.GET("getMenuList", v1.GetMenuList)
