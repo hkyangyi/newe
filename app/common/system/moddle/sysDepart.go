@@ -30,6 +30,12 @@ type SysDepart struct {
 	List       []SysDepart `gorm:"-" json:"children"`
 }
 
+// 刷新
+func (a *SysDepart) Refresh() error {
+	err := db.Db.Model(a).First(a).Error
+	return err
+}
+
 // 添加
 func (a *SysDepart) Add() error {
 	a.ID = utils.GetUUID()

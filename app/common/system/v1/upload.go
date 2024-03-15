@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+
 	"github.com/hkyangyi/newe/app/common/app"
 	"github.com/hkyangyi/newe/app/common/system/moddle"
 	"github.com/hkyangyi/newe/app/common/upload"
@@ -24,8 +25,9 @@ func UpImage(c *gin.Context) {
 		return
 	}
 	authdb, _ := c.Get("AdminAuthData")
+	authdata := authdb.(moddle.AdminAuth)
 	var f = upload.Field{
-		Usdb:   authdb.(moddle.SysMember),
+		Usdb:   authdata.Merdb,
 		Field:  file,
 		Header: image,
 	}
@@ -57,5 +59,4 @@ func UpImage(c *gin.Context) {
 	data["url"] = fullurl
 	data["path"] = src
 	g.SUCCESS(data)
-	return
 }

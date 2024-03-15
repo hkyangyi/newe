@@ -42,30 +42,16 @@ func NewRedis(host, pass string, idtime, maxid, maxac int) (*NeRedis, error) {
 
 // 设置缓存
 func (a *NeRedis) Set(key string, data interface{}, ts time.Duration) error {
-	// conn := a.Conn.Get()
-	// defer conn.Close()
-
 	value, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
-
-	// _, err = conn.Do("SET", key, value)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// _, err = conn.Do("EXPIRE", key, time)
-	// if err != nil {
-	// 	return err
-	// }
 	tn := ts * time.Second
 	err = a.Conn.Set(ctx, key, value, tn).Err()
 	if err != nil {
 		fmt.Println("Failed to set key:", err)
 		return err
 	}
-
 	return nil
 }
 

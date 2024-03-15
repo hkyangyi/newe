@@ -63,3 +63,8 @@ func (a *SysApiList) GetList(page utils.PageList, where string, v ...interface{}
 	page.List = items
 	return page
 }
+
+// 根据path获取数据
+func (a *SysApiList) GetByPath() {
+	db.Db.Table("sys_api_list").Where("path = ?", a.Path).First(a)
+}

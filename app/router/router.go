@@ -21,7 +21,7 @@ func RegRouter(r *gin.RouterGroup) {
 	admin := r.Group("admin")
 
 	admin.POST("login", v1.Login)
-	admin.GET("loginOut", v1.LoginOut)
+	admin.GET("logout", v1.LoginOut)
 	admin.POST("createMenu", v1.CreateMenu)
 	admin.GET("dict", v1.GetDictByCode)
 	admin.GET("GetRoleByDepart", v1.GetRoleByDepart)

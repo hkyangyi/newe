@@ -2,11 +2,12 @@ package v1
 
 import (
 	"errors"
+	"strings"
+	"time"
+
 	"github.com/hkyangyi/newe/app/common/app"
 	"github.com/hkyangyi/newe/app/common/system/moddle"
 	"github.com/hkyangyi/newe/common/utils"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,7 +27,7 @@ func MemberAdd(c *gin.Context) {
 		g.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(moddle.SysMember)
+	mer := merdata.(moddle.AdminAuth)
 	a.Password = utils.EncodeMD5(a.Password)
 	a.CreateTime = time.Now().Unix()
 	a.UpdateTime = time.Now().Unix()
@@ -41,8 +42,8 @@ func MemberAdd(c *gin.Context) {
 	}
 	a.OrgCode = fdp.Code
 
-	inn := strings.Index(fdp.Code, mer.OrgCode)
-	if mer.Username != "admin" && inn < 0 {
+	inn := strings.Index(fdp.Code, mer.Merdb.OrgCode)
+	if mer.Merdb.Username != "admin" && inn < 0 {
 		g.Error(errors.New("权限错误"))
 		return
 	}
@@ -71,7 +72,7 @@ func MemberEdit(c *gin.Context) {
 		g.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(moddle.SysMember)
+	mer := merdata.(moddle.AdminAuth)
 
 	if len(a.ID) != 32 {
 		g.LoginError(errors.New("参数ID错误"))
@@ -92,8 +93,8 @@ func MemberEdit(c *gin.Context) {
 	}
 	a.OrgCode = fdp.Code
 
-	inn := strings.Index(fdp.Code, mer.OrgCode)
-	if mer.Username != "admin" && inn < 0 {
+	inn := strings.Index(fdp.Code, mer.Merdb.OrgCode)
+	if mer.Merdb.Username != "admin" && inn < 0 {
 		g.Error(errors.New("权限错误"))
 		return
 	}
@@ -146,14 +147,14 @@ func MemberGetList(c *gin.Context) {
 		g.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(moddle.SysMember)
+	mer := merdata.(moddle.AdminAuth)
 
 	var wheremap []string
 	var params []interface{}
 
-	if mer.Username != "admin" {
+	if mer.Merdb.Username != "admin" {
 		wheremap = append(wheremap, " org_code like ?")
-		params = append(params, mer.OrgCode+"%")
+		params = append(params, mer.Merdb.OrgCode+"%")
 	}
 
 	if len(a.Username) > 0 {

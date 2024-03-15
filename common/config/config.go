@@ -37,6 +37,8 @@ type Config struct {
 	FILE_SavePath  string //文件保存路径
 	FILE_MaxSize   int    //文件最大限制
 	FILE_AllowExts string //文件格式
+
+	SYS_SQLAUTH int //是否开启数据权限
 }
 
 var Conf = &Config{}
@@ -49,32 +51,33 @@ func ReadConfig() *Config {
 	if b {
 		fmt.Println("初始化配置文件")
 		//默认配置
-		Conf.HTTP_RunMode = "debug"                      //运行模式debug or release
-		Conf.HTTP_Port = 80                              //http服务端口
-		Conf.HTTP_ReadTimeout = 60                       //读取时间
-		Conf.HTTP_WriteTimeout = 60                      //写入时间
-		Conf.HTTP_ServeUrl = "http://localhost/"         //服务地址
-		Conf.HTTP_RuntimeRootPath = "assets/runtime"     //日志存储目录
-		Conf.HTTP_ServeCode = "A"                        //服务器编号
-		Conf.DB_Type = "mysql"                           //数据链接类型
-		Conf.DB_User = "root"                            //用户名
-		Conf.DB_Password = "github.com/hkyangyi/newe123" //github.com/hkyangyi/newe123
-		Conf.DB_Host = "127.0.0.1:3306"                  //链接地址
-		Conf.DB_Name = "github.com/hkyangyi/newe"        //数据库名
-		Conf.DB_TablePrefix = ""
-		Conf.REDIS_Host = "127.0.0.1:6379"
-		Conf.REDIS_Password = ""
-		Conf.REDIS_MaxIdle = 2       //最大空闲连接数
-		Conf.REDIS_MaxActive = 10    // #在给定时间内，允许分配的最大连接数（当为零时，没有限制）
-		Conf.REDIS_IdleTimeout = 200 // #在给定时间内将会保持空闲状态，若到达时间限制则关闭连接（当为零时，没有限制）
-		Conf.IMG_PrefixUrl = ""      //图片访问URL
-		Conf.IMG_SavePath = ""       //图片上传地址
-		Conf.IMG_MaxSize = 2097152   //#图片最大
-		Conf.IMG_AllowExts = ""      //#图片格式
-		Conf.FILE_PrefixUrl = ""     //文件访问URL前缀
-		Conf.FILE_SavePath = ""      //文件保存目录
-		Conf.FILE_MaxSize = 2097152  //#文件最大
-		Conf.FILE_AllowExts = ""     //#文件格式
+		Conf.HTTP_RunMode = "debug"                  //运行模式debug or release
+		Conf.HTTP_Port = 80                          //http服务端口
+		Conf.HTTP_ReadTimeout = 60                   //读取时间
+		Conf.HTTP_WriteTimeout = 60                  //写入时间
+		Conf.HTTP_ServeUrl = "http://localhost/"     //服务地址
+		Conf.HTTP_RuntimeRootPath = "assets/runtime" //日志存储目录
+		Conf.HTTP_ServeCode = "A"                    //服务器编号
+		Conf.DB_Type = "mysql"                       //数据链接类型
+		Conf.DB_User = "root"                        //用户名
+		Conf.DB_Password = "newe123"                 //数据库连接密码
+		Conf.DB_Host = "127.0.0.1:3306"              //链接地址
+		Conf.DB_Name = "newe"                        //数据库名
+		Conf.DB_TablePrefix = ""                     //数据库数据表前缀
+		Conf.REDIS_Host = "127.0.0.1:6379"           //redis连接
+		Conf.REDIS_Password = ""                     //redis连接密码
+		Conf.REDIS_MaxIdle = 2                       //最大空闲连接数
+		Conf.REDIS_MaxActive = 10                    // #在给定时间内，允许分配的最大连接数（当为零时，没有限制）
+		Conf.REDIS_IdleTimeout = 200                 // #在给定时间内将会保持空闲状态，若到达时间限制则关闭连接（当为零时，没有限制）
+		Conf.IMG_PrefixUrl = ""                      //图片访问URL
+		Conf.IMG_SavePath = ""                       //图片上传地址
+		Conf.IMG_MaxSize = 2097152                   //#图片最大
+		Conf.IMG_AllowExts = ""                      //#图片格式
+		Conf.FILE_PrefixUrl = ""                     //文件访问URL前缀
+		Conf.FILE_SavePath = ""                      //文件保存目录
+		Conf.FILE_MaxSize = 2097152                  //#文件最大
+		Conf.FILE_AllowExts = ""                     //#文件格式
+		Conf.SYS_SQLAUTH = 0                         //是否开启数据权限，0不开启 1开启
 		Conf.Write()
 
 	} else {

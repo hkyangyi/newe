@@ -3,10 +3,11 @@ package v1
 import (
 	"encoding/json"
 	"errors"
+	"strings"
+
 	"github.com/hkyangyi/newe/app/common/app"
 	"github.com/hkyangyi/newe/app/common/system/moddle"
 	"github.com/hkyangyi/newe/common/utils"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,12 +19,12 @@ func GetMenuList(c *gin.Context) {
 		a.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(moddle.SysMember)
+	mer := merdata.(moddle.AdminAuth)
 	var items []moddle.SysMenus
-	if mer.Username == "admin" {
+	if mer.Merdb.Username == "admin" {
 		items = moddle.GetMenusList()
 	} else {
-		items = moddle.SysMenusListGetByDepart(mer.DepartId)
+		items = moddle.SysMenusListGetByDepart(mer.Merdb.DepartId)
 	}
 
 	data := GetMenuListByAdmin(items)
@@ -172,14 +173,14 @@ func MerGetMenu(c *gin.Context) {
 		a.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(moddle.SysMember)
+	mer := merdata.(moddle.AdminAuth)
 	//a.SUCCESS(mer)
 
 	var params []interface{}
 	var where []string
 
-	if mer.Username != "admin" {
-		fd, err := moddle.SysDepartGetByCode(mer.OrgCode)
+	if mer.Merdb.Username != "admin" {
+		fd, err := moddle.SysDepartGetByCode(mer.Merdb.OrgCode)
 		if err != nil {
 			a.Error(err)
 			return

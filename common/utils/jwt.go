@@ -1,13 +1,13 @@
 package utils
 
 import (
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
-var key string = "github.com/hkyangyi/newetoken"
+const key string = "github.com/hkyangyi/newetoken"
 
 // 生成TOken
 func SetToken(uuid string) (string, error) {
@@ -26,19 +26,21 @@ func SetToken(uuid string) (string, error) {
 }
 
 // 解析token
-func AuthToken(tokenString string) (string, bool) {
+func AuthToken(tokenString string) (string, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(key), nil
 	})
 	if err != nil {
-		fmt.Println("HS256的token解析错误，err:", err, tokenString)
-		return "", false
+		return "", errors.New("HS256的token解析错误")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		fmt.Println("ParseHStoken:claims类型转换失败")
-		return "", false
+		return "", errors.New("ParseHStoken:claims类型转换失败")
 	}
-	return claims["uuid"].(string), true
+	exp := claims["exp"].(float64)
+	if int64(exp) < time.Now().Unix() {
+		return "", errors.New("token已失效")
+	}
+	return claims["uuid"].(string), nil
 }

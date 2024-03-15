@@ -3,12 +3,12 @@ package v1
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/hkyangyi/newe/app/common/app"
 	"github.com/hkyangyi/newe/app/common/system/moddle"
-	"github.com/hkyangyi/newe/common/db"
 	"github.com/hkyangyi/newe/common/redis"
 	"github.com/hkyangyi/newe/common/utils"
 
@@ -47,7 +47,7 @@ func LoginOut(c *gin.Context) {
 	var g = app.NewApp(c)
 	token := c.GetHeader("Authorization")
 	uuid, err := utils.AuthToken(token)
-	if !err {
+	if err != nil {
 		g.LoginError(nil)
 		return
 	}
@@ -59,12 +59,12 @@ func LoginOut(c *gin.Context) {
 	}
 	redis.REDIS.Delete(uuid)
 	g.SUCCESS(nil)
-	return
 }
 
-func (a *AuthFrom) Login() (map[string]interface{}, error) {
-	if len(a.Username) < 5 {
-		return nil, errors.New("请输入正确的账号")
+func (a *AuthFrom) Login() (moddle.AdminAuth, error) {
+	var data moddle.AdminAuth
+	if len(a.Username) < 3 {
+		return data, errors.New("请输入正确的账号")
 	}
 
 	rediskey := "AUTH_ERROR_COUNT_" + a.Username
@@ -75,37 +75,41 @@ func (a *AuthFrom) Login() (map[string]interface{}, error) {
 		LoginErrCount = 0
 	}
 	if LoginErrCount >= 5 {
-		return nil, errors.New("您今日输入错误次数过多，请24小时后再试")
+		return data, errors.New("您今日输入错误次数过多，请24小时后再试")
 	}
 
-	var data = make(map[string]interface{})
 	//查询用户信息
 	merdb, err := moddle.FindMemberByUsername(a.Username)
 	if err != nil {
-		return nil, err
+		return data, err
 	}
 
 	if len(merdb.ID) != 32 {
-		return nil, errors.New("账号或密码错误")
+		return data, errors.New("账号或密码错误")
 	}
 	if merdb.Status != 1 {
-		return nil, errors.New("您的账号已停用")
+		return data, errors.New("您的账号已停用")
 	}
 
 	md5ps := utils.EncodeMD5(a.Password)
 	if md5ps != merdb.Password {
 		LoginErrCount++
 		redis.REDIS.Set(rediskey, LoginErrCount, 60*60*24)
-		return nil, errors.New("密码错误,您还有" + strconv.Itoa(5-LoginErrCount) + "次机会")
+		return data, errors.New("密码错误,您还有" + strconv.Itoa(5-LoginErrCount) + "次机会")
 	}
 
 	merdb.Password = ""
 	//登陆成功
-	data["usdb"] = merdb
-	authkey := "AUTH_" + utils.GetUUID()
+	data.Merdb = merdb
+	err = data.RefreshByMerdb()
+	if err != nil {
+		return data, err
+	}
+	authkey := fmt.Sprintf("AUTH_%s_%s", merdb.ID, merdb.Username)
 	token, _ := utils.SetToken(authkey)
-	redis.REDIS.Set(authkey, merdb, 60*60)
-	data["token"] = token
+	data.Token = token
+
+	redis.REDIS.Set(authkey, data, 60*60)
 
 	return data, nil
 }
@@ -124,10 +128,9 @@ func GetUserInfo(c *gin.Context) {
 		a.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(moddle.SysMember)
-	mer.Refresh()
+	mer := merdata.(moddle.AdminAuth)
+	mer.RefreshByMerdb()
 	a.SUCCESS(mer)
-	return
 }
 
 // @Tags 获取按钮权限代码
@@ -143,13 +146,13 @@ func GetPermCode(c *gin.Context) {
 		a.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(moddle.SysMember)
+	mer := merdata.(moddle.AdminAuth)
 
 	var items []string
-	if mer.Username == "admin" {
+	if mer.Merdb.Username == "admin" {
 		items = moddle.SysButtonGetList()
 	} else {
-		items = moddle.SysButtonGetByDepart(mer.DepartId)
+		items = moddle.SysButtonGetByDepart(mer.Merdb.DepartId)
 	}
 	a.SUCCESS(items)
 }
@@ -215,7 +218,7 @@ func CreateMenu(c *gin.Context) {
 	var data []VueRouteMenu
 	var a = app.NewApp(c)
 	if err := a.Bind(&data); err != nil {
-
+		return
 	}
 	CreateMenuls(data, "demo2")
 
@@ -271,38 +274,6 @@ type verifyform struct {
 	TableId    string `form:"tableid"`
 }
 
-// @验证字段唯一
-
-// @Tags Base
-// @Description 验证字段是否存在
-// @Accept  json
-// @Produce json
-// @Param tablename  path   string    true   "表名字"
-// @Param fieldname  path   string    true   "字段名字"
-// @Param tablevalue  path   string    true   "字段值"
-// @Param tableid  path   int    true  "过滤ID 在编辑时传入ID"
-// @Success 200 {string} string	"ok"
-// @Router /api/base/verifysole [get]
-func Verifysole(c *gin.Context) {
-	var a = app.NewApp(c)
-	var data verifyform
-	if e := a.Bind(&data); e != nil {
-		a.Error(errors.New("参数错误"))
-		return
-	}
-
-	where := make(map[string]interface{})
-	where[data.FieldName] = data.Tablevalue
-
-	res := db.VerifyOnly(data.TableName, data.TableId, where)
-	if res {
-		a.Error(errors.New("已存在"))
-		return
-	}
-	a.SUCCESS(nil)
-	return
-}
-
 // 更新用户信息
 func UpUserInfo(c *gin.Context) {
 	var g = app.NewApp(c)
@@ -313,12 +284,11 @@ func UpUserInfo(c *gin.Context) {
 		g.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(moddle.SysMember)
-	data.ID = mer.ID
+	mer := merdata.(moddle.AdminAuth)
+	data.ID = mer.Merdb.ID
 	data.Edit()
 
 	g.SUCCESS(nil)
-	return
 }
 
 type STEditPass struct {
@@ -343,16 +313,16 @@ func EditPass(c *gin.Context) {
 		g.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(moddle.SysMember)
-	mer.Refresh()
+	mer := merdata.(moddle.AdminAuth)
+	mer.RefreshByMerdb()
 	oldpass := utils.EncodeMD5(a.OldPass)
-	if oldpass != mer.Password {
+	if oldpass != mer.Merdb.Password {
 		g.Error(errors.New("密码错误"))
 		return
 	}
 	newpass := utils.EncodeMD5(a.NewPass)
 
-	err := mer.EditPass(newpass)
+	err := mer.Merdb.EditPass(newpass)
 	if err != nil {
 		g.Error(err)
 		return

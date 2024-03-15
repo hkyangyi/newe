@@ -6,9 +6,11 @@ import (
 )
 
 type SysMember struct {
-	ID         string `gorm:"primary_key" json:"id"`    //
-	DepartId   string `json:"departId" form:"departId"` //组织结构ID
-	RoleId     string `json:"roleId" form:"roleId"`
+	ID         string `gorm:"primary_key" json:"id"`                                  //
+	DepartId   string `json:"departId" form:"departId"  dict:"DepartName_sysDepart" ` //组织结构ID
+	DepartName string `json:"departName" gorm:"-"`
+	RoleId     string `json:"roleId" form:"roleId"  dict:"RoleName_sysRole" ` //角色ID
+	RoleName   string `json:"roleName" gorm:"-"`
 	UID        string `json:"uid"`                      //会员ID
 	Username   string `json:"username" form:"username"` //登陆账号
 	Password   string `json:"password"`                 //密码

@@ -21,6 +21,11 @@ type SysRole struct {
 	utils.PageList
 }
 
+func (a *SysRole) Refresh() error {
+	err := db.Db.Model(a).First(a).Error
+	return err
+}
+
 func GetSysRoleByDepart(id string) []SysRole {
 	var items []SysRole
 	db.Db.Select("id", "role_name").Where("depart_id = ?", id).Find(&items)
@@ -96,6 +101,10 @@ type SysRoleRules struct {
 	UpdateTime int64  `json:"updateTime"` //修改时间
 }
 
+func (a *SysRoleRules) GetByApiVsRole() {
+	db.Db.Table("sys_role_rules").Where("role_id = ? and api_id = ?", a.RoleId, a.ApiId).First(a)
+}
+
 type SysRoleRulesList struct {
 	ID         string `gorm:"primary_key" json:"id" form:"id"`
 	MenuId     string `json:"menuId" form:"menuId"  dict:"MenuName_sysMenus" `
@@ -124,6 +133,9 @@ func (a *SysRoleRulesList) GetRoleReles() []SysRoleRulesList {
 	for i := 0; i < len(items); i++ {
 		if items[i].RoleId == "" {
 			items[i].RoleId = a.RoleId
+		}
+		if items[i].RulesId == "" {
+			items[i].RulesId = utils.GetUUID()
 		}
 	}
 	return items

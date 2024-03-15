@@ -2,10 +2,11 @@ package v1
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/hkyangyi/newe/app/common/app"
 	"github.com/hkyangyi/newe/app/common/system/moddle"
 	"github.com/hkyangyi/newe/common/utils"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -73,8 +74,8 @@ func DepartGetList(c *gin.Context) {
 		a.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(moddle.SysMember)
-	items := data.GetList(mer)
+	mer := merdata.(moddle.AdminAuth)
+	items := data.GetList(mer.Merdb)
 	a.SUCCESS(items)
 	return
 }
