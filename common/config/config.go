@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"github.com/hkyangyi/newe/common/file"
 )
 
 type Config struct {
@@ -14,6 +16,7 @@ type Config struct {
 	HTTP_ServeUrl        string //服务地址
 	HTTP_RuntimeRootPath string //日志存储目录
 	HTTP_ServeCode       string //服务器编号
+	HTTP_ServeIp         string // 服务端IP
 
 	DB_Type        string //数据库类型
 	DB_User        string //用户名
@@ -49,6 +52,7 @@ func ReadConfig() *Config {
 	_, err := os.Stat(path)
 	b := os.IsNotExist(err)
 	if b {
+		file.IsNotExistMkDir("assets/config")
 		fmt.Println("初始化配置文件")
 		//默认配置
 		Conf.HTTP_RunMode = "debug"                  //运行模式debug or release

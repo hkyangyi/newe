@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	roootRouter "github.com/hkyangyi/newe/app/router"
+	roootRouter "github.com/hkyangyi/newe/router/route"
 )
 
 var Route *gin.Engine
@@ -32,8 +32,8 @@ func RouteInit() {
 		return str
 	}))
 	Route.Use(gin.Recovery())
-	Route.StaticFS("/upload/images", http.Dir(Conf.IMG_SavePath))  //文件目录
-	Route.StaticFS("/upload/fields", http.Dir(Conf.FILE_SavePath)) //文件目录
+	Route.StaticFS(Conf.IMG_PrefixUrl, http.Dir(Conf.IMG_SavePath))   //文件目录
+	Route.StaticFS(Conf.FILE_PrefixUrl, http.Dir(Conf.FILE_SavePath)) //文件目录
 	Route.Use(Cors())
 	//初始化系统路由
 	r := NewRoute("newesys")
