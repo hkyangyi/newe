@@ -291,6 +291,7 @@ func (a *Field) CheckFieldSize() bool {
 
 // 根据 Content-Type 获取文件扩展名
 func getFileExtension(contentType string) string {
+	fmt.Println(contentType)
 	switch contentType {
 	case "image/jpeg":
 		return ".jpg"
@@ -298,6 +299,8 @@ func getFileExtension(contentType string) string {
 		return ".png"
 	case "image/gif":
 		return ".gif"
+	case "application/vnd.ms-excel":
+		return ".xls"
 	// 其他文件类型的处理逻辑
 	default:
 		return ""
