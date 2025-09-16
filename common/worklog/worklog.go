@@ -2,6 +2,8 @@ package worklog
 
 import (
 	"fmt"
+	"log"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -10,81 +12,229 @@ import (
 	"github.com/aiwuTech/fileLogger"
 )
 
+// 日志类型常量
+const (
+	LogTypeSQL   = "sql"
+	LogTypeError = "error"
+	LogTypeTrace = "trace"
+)
+
+// 时间格式常量
+const (
+	DateFormat     = "20060102"
+	MonthFormat    = "200601"
+	LogFileExt     = "log"
+	LogFileSuffix  = "-"
+	LogFileMaxSize = 10 // MB
+)
+
+// 日志配置常量
+const (
+	LogFileMaxBackups = 2
+	LogFileMaxAge     = 300
+	LogFileMaxLine    = 5000
+)
+
+// WorkLog 工作日志结构体
 type WorkLog struct {
-	LOGTIME  string
-	FILENAME string
-	Path     string
-	WG       *sync.WaitGroup
-	SQL      *fileLogger.FileLogger
-	ERR      *fileLogger.FileLogger
-	TRACE    *fileLogger.FileLogger
+	logTime  string
+	fileName string
+	path     string
+	mu       sync.RWMutex
+	sql      *fileLogger.FileLogger
+	err      *fileLogger.FileLogger
+	trace    *fileLogger.FileLogger
 }
 
+// 全局日志实例
 var Logio *WorkLog
 
-func WorkLogInit(path string) *WorkLog {
-	file.IsNotExistMkDir(path)
-	Logio = &WorkLog{
-		Path:    path,
-		LOGTIME: time.Now().Format("20060102"),
-		WG:      new(sync.WaitGroup),
+// Init 初始化工作日志
+func Init(path string) *WorkLog {
+	if err := file.IsNotExistMkDir(path); err != nil {
+		log.Printf("创建日志目录失败: %v", err)
 	}
-	Logio.WG.Add(1)
-	Logio.NewFile()
+
+	Logio = &WorkLog{
+		path:    path,
+		logTime: time.Now().Format(DateFormat),
+	}
+
+	// 初始化日志文件
+	Logio.rotateLogFiles()
 
 	return Logio
 }
 
-func (a *WorkLog) NewFile() {
-	a.LOGTIME = time.Now().Format("20060102")
-	FILENAME := fmt.Sprintf("%s.%s", time.Now().Format("20060102"), "log")
-	tpath := time.Now().Format("200601")
-	tracepath := fmt.Sprintf("%s/trace/%s", a.Path, tpath)
-	if err := file.IsNotExistMkDir(tracepath); err != nil {
-		fmt.Println("日志创建失败")
-	}
-	a.TRACE = fileLogger.NewSizeLogger(tracepath, FILENAME, "-", 10, 2, fileLogger.MB, 300, 5000)
-
-	errpath := fmt.Sprintf("%s/error/%s", a.Path, tpath)
-	if err := file.IsNotExistMkDir(errpath); err != nil {
-		fmt.Println("日志创建失败")
-	}
-	a.ERR = fileLogger.NewSizeLogger(errpath, FILENAME, "-", 10, 2, fileLogger.MB, 300, 5000)
-
-	sqlpath := fmt.Sprintf("%s/sql/%s", a.Path, tpath)
-	if err := file.IsNotExistMkDir(sqlpath); err != nil {
-		fmt.Println("日志创建失败")
-	}
-	a.SQL = fileLogger.NewSizeLogger(sqlpath, FILENAME, "-", 10, 2, fileLogger.MB, 300, 5000)
-	a.WG.Done()
+// GetLogger 获取全局日志实例
+func GetLogger() *WorkLog {
+	return Logio
 }
 
-func (a *WorkLog) WSQL(v ...interface{}) {
-	a.WG.Wait()
-	if a.LOGTIME != time.Now().Format("20060102") {
-		a.WG.Add(1)
-		a.NewFile()
-	}
-	a.SQL.Println(v...)
-	return
+// rotateLogFiles 轮转日志文件
+func (l *WorkLog) rotateLogFiles() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	l.logTime = time.Now().Format(DateFormat)
+	l.fileName = fmt.Sprintf("%s.%s", l.logTime, LogFileExt)
+	monthDir := time.Now().Format(MonthFormat)
+
+	// 创建并初始化各类型日志
+	l.trace = l.createLogger(LogTypeTrace, monthDir)
+	l.err = l.createLogger(LogTypeError, monthDir)
+	l.sql = l.createLogger(LogTypeSQL, monthDir)
 }
 
-func (a *WorkLog) WERR(v ...interface{}) {
-	a.WG.Wait()
-	if a.LOGTIME != time.Now().Format("20060102") {
-		a.WG.Add(1)
-		a.NewFile()
+// createLogger 创建指定类型的日志记录器
+func (l *WorkLog) createLogger(logType, monthDir string) *fileLogger.FileLogger {
+	logPath := filepath.Join(l.path, logType, monthDir)
+	
+	if err := file.IsNotExistMkDir(logPath); err != nil {
+		log.Printf("创建%s日志目录失败: %v", logType, err)
+		// 尝试使用基础路径作为备选
+		logPath = l.path
 	}
-	a.ERR.Println(v...)
-	return
+
+	return fileLogger.NewSizeLogger(
+		logPath,
+		l.fileName,
+		LogFileSuffix,
+		LogFileMaxSize,
+		LogFileMaxBackups,
+		fileLogger.MB,
+		LogFileMaxAge,
+		LogFileMaxLine,
+	)
 }
 
-func (a *WorkLog) WTRACE(v ...interface{}) {
-	a.WG.Wait()
-	if a.LOGTIME != time.Now().Format("20060102") {
-		a.WG.Add(1)
-		a.NewFile()
+// checkRotate 检查是否需要轮转日志文件
+func (l *WorkLog) checkRotate() {
+	currentDate := time.Now().Format(DateFormat)
+	
+	l.mu.RLock()
+	needRotate := l.logTime != currentDate
+	l.mu.RUnlock()
+	
+	if needRotate {
+		l.rotateLogFiles()
 	}
-	a.TRACE.Println(v...)
-	return
+}
+
+// SQL 记录SQL日志
+func (l *WorkLog) SQL(v ...interface{}) {
+	l.checkRotate()
+	
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	
+	l.sql.Println(v...)
+}
+
+// SQLf 记录格式化的SQL日志
+func (l *WorkLog) SQLf(format string, v ...interface{}) {
+	l.checkRotate()
+	
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	
+	l.sql.Printf(format, v...)
+}
+
+// Error 记录错误日志
+func (l *WorkLog) Error(v ...interface{}) {
+	l.checkRotate()
+	
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	
+	l.err.Println(v...)
+}
+
+// Errorf 记录格式化的错误日志
+func (l *WorkLog) Errorf(format string, v ...interface{}) {
+	l.checkRotate()
+	
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	
+	l.err.Printf(format, v...)
+}
+
+// Trace 记录跟踪日志
+func (l *WorkLog) Trace(v ...interface{}) {
+	l.checkRotate()
+	
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	
+	l.trace.Println(v...)
+}
+
+// Tracef 记录格式化的跟踪日志
+func (l *WorkLog) Tracef(format string, v ...interface{}) {
+	l.checkRotate()
+	
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	
+	l.trace.Printf(format, v...)
+}
+
+// 为了向后兼容，保留原有的函数名，但内部调用新的实现
+func WorkLogInit(path string) *WorkLog {
+	return Init(path)
+}
+
+func (l *WorkLog) NewFile() {
+	l.rotateLogFiles()
+}
+
+func (l *WorkLog) WSQL(v ...interface{}) {
+	l.SQL(v...)
+}
+
+func (l *WorkLog) WERR(v ...interface{}) {
+	l.Error(v...)
+}
+
+func (l *WorkLog) WTRACE(v ...interface{}) {
+	l.Trace(v...)
+}
+
+// 全局便捷函数
+func SQL(v ...interface{}) {
+	if Logio != nil {
+		Logio.SQL(v...)
+	}
+}
+
+func SQLf(format string, v ...interface{}) {
+	if Logio != nil {
+		Logio.SQLf(format, v...)
+	}
+}
+
+func Error(v ...interface{}) {
+	if Logio != nil {
+		Logio.Error(v...)
+	}
+}
+
+func Errorf(format string, v ...interface{}) {
+	if Logio != nil {
+		Logio.Errorf(format, v...)
+	}
+}
+
+func Trace(v ...interface{}) {
+	if Logio != nil {
+		Logio.Trace(v...)
+	}
+}
+
+func Tracef(format string, v ...interface{}) {
+	if Logio != nil {
+		Logio.Tracef(format, v...)
+	}
 }

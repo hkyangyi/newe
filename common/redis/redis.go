@@ -18,25 +18,36 @@ var REDIS *NeRedis
 
 var ctx = context.Background()
 
-func NewRedis(host, pass string, idtime, maxid, maxac int) (*NeRedis, error) {
+func NewRedis(host, pass string, idleTimeout, maxIdle, maxActive int) (*NeRedis, error) {
+	opts := &redis.Options{
+		Addr:         host,
+		Password:     pass,
+		DB:           0,
+		DialTimeout:  10 * time.Second,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  time.Duration(idleTimeout) * time.Second,
+		MaxIdleConns: maxIdle,
+		PoolSize:     maxActive,
+		PoolTimeout:  5 * time.Second,
+		MinIdleConns: 5,
+	}
+
 	REDIS = &NeRedis{}
+	REDIS.Conn = redis.NewClient(opts)
 
-	// 创建Redis连接池
-	REDIS.Conn = redis.NewClient(&redis.Options{
-		Addr:     host,
-		Password: pass, // 如果有密码，可以在这里设置
-		DB:       0,    // 选择要使用的Redis数据库
-		PoolSize: 10,   // 连接池的大小
-	})
+	// 使用带超时的上下文进行连接测试
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// 连接测活
 	_, err := REDIS.Conn.Ping(ctx).Result()
 	if err != nil {
-		panic(err)
+		worklog.Logio.WERR(fmt.Sprintf("Redis连接失败: %v, Addr: %s", err, host))
+		return nil, fmt.Errorf("Redis连接失败: %v", err)
 	}
+
 	REDIS.Status = true
-	fmt.Println("连接Redis成功")
-	REDIS.Status = true
+	worklog.Logio.WTRACE(fmt.Sprintf("Redis连接成功: %s", host))
 	return REDIS, nil
 }
 

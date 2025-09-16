@@ -16,6 +16,11 @@ import (
 //	@Router			/api/v1/
 
 func RegRouter(r *gin.RouterGroup) {
+	// 健康检查路由
+	r.GET("/health", middle.HealthCheck())
+	r.GET("/ready", middle.ReadyCheck())
+	r.GET("/metrics", middle.Metrics())
+	
 	// api := r.Group("api")
 	admin := r.Group("admin")
 

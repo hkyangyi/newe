@@ -9,39 +9,39 @@ import (
 )
 
 type Config struct {
-	HTTP_RunMode         string //运行模式debug or release
-	HTTP_Port            int    //http服务端口
-	HTTP_ReadTimeout     int    //读取时间
-	HTTP_WriteTimeout    int    //写入时间
-	HTTP_ServeUrl        string //服务地址
-	HTTP_RuntimeRootPath string //日志存储目录
-	HTTP_ServeCode       string //服务器编号
-	HTTP_ServeIp         string // 服务端IP
+	HTTP_RunMode         string `json:"http_run_mode"`          //运行模式debug or release
+	HTTP_Port            int    `json:"http_port"`              //http服务端口
+	HTTP_ReadTimeout     int    `json:"http_read_timeout"`      //读取时间
+	HTTP_WriteTimeout    int    `json:"http_write_timeout"`     //写入时间
+	HTTP_ServeUrl        string `json:"http_serve_url"`         //服务地址
+	HTTP_RuntimeRootPath string `json:"http_runtime_root_path"` //日志存储目录
+	HTTP_ServeCode       string `json:"http_serve_code"`        //服务器编号
+	HTTP_ServeIp         string `json:"http_serve_ip"`          //服务端IP
 
-	DB_Type        string //数据库类型
-	DB_User        string //用户名
-	DB_Password    string //密码
-	DB_Host        string //链接
-	DB_Name        string //数据库名称
-	DB_TablePrefix string // 前缀
+	DB_Type        string `json:"db_type"`         //数据库类型
+	DB_User        string `json:"db_user"`         //用户名
+	DB_Password    string `json:"db_password"`     //密码
+	DB_Host        string `json:"db_host"`         //链接
+	DB_Name        string `json:"db_name"`         //数据库名称
+	DB_TablePrefix string `json:"db_table_prefix"` //前缀
 
-	REDIS_Host        string //redis 链接
-	REDIS_Password    string //redis 密码
-	REDIS_MaxIdle     int    // 最大空闲
-	REDIS_MaxActive   int    //最大连接数
-	REDIS_IdleTimeout int    //空闲超时
+	REDIS_Host        string `json:"redis_host"`         //redis 链接
+	REDIS_Password    string `json:"redis_password"`     //redis 密码
+	REDIS_MaxIdle     int    `json:"redis_max_idle"`     //最大空闲
+	REDIS_MaxActive   int    `json:"redis_max_active"`   //最大连接数
+	REDIS_IdleTimeout int    `json:"redis_idle_timeout"` //空闲超时
 
-	IMG_PrefixUrl string //图片url前缀
-	IMG_SavePath  string //图片保存路径
-	IMG_MaxSize   int    //最大图片大小
-	IMG_AllowExts string //图片格式
+	IMG_PrefixUrl string `json:"img_prefix_url"` //图片url前缀
+	IMG_SavePath  string `json:"img_save_path"`  //图片保存路径
+	IMG_MaxSize   int    `json:"img_max_size"`   //最大图片大小
+	IMG_AllowExts string `json:"img_allow_exts"` //图片格式
 
-	FILE_PrefixUrl string //文件前缀
-	FILE_SavePath  string //文件保存路径
-	FILE_MaxSize   int    //文件最大限制
-	FILE_AllowExts string //文件格式
+	FILE_PrefixUrl string `json:"file_prefix_url"` //文件前缀
+	FILE_SavePath  string `json:"file_save_path"`  //文件保存路径
+	FILE_MaxSize   int    `json:"file_max_size"`   //文件最大限制
+	FILE_AllowExts string `json:"file_allow_exts"` //文件格式
 
-	SYS_SQLAUTH int //是否开启数据权限
+	SYS_SQLAUTH int `json:"sys_sql_auth"` //是否开启数据权限
 }
 
 var Conf = &Config{}
@@ -50,54 +50,74 @@ func ReadConfig() *Config {
 	path := "assets/config/config.json"
 
 	_, err := os.Stat(path)
-	b := os.IsNotExist(err)
-	if b {
+	if os.IsNotExist(err) {
 		file.IsNotExistMkDir("assets/config")
-		fmt.Println("初始化配置文件")
-		//默认配置
-		Conf.HTTP_RunMode = "debug"                  //运行模式debug or release
-		Conf.HTTP_Port = 80                          //http服务端口
-		Conf.HTTP_ReadTimeout = 60                   //读取时间
-		Conf.HTTP_WriteTimeout = 60                  //写入时间
-		Conf.HTTP_ServeUrl = "http://localhost/"     //服务地址
-		Conf.HTTP_RuntimeRootPath = "assets/runtime" //日志存储目录
-		Conf.HTTP_ServeCode = "A"                    //服务器编号
-		Conf.DB_Type = "mysql"                       //数据链接类型
-		Conf.DB_User = "root"                        //用户名
-		Conf.DB_Password = "newe123"                 //数据库连接密码
-		Conf.DB_Host = "127.0.0.1:3306"              //链接地址
-		Conf.DB_Name = "newe"                        //数据库名
-		Conf.DB_TablePrefix = ""                     //数据库数据表前缀
-		Conf.REDIS_Host = "127.0.0.1:6379"           //redis连接
-		Conf.REDIS_Password = ""                     //redis连接密码
-		Conf.REDIS_MaxIdle = 2                       //最大空闲连接数
-		Conf.REDIS_MaxActive = 10                    // #在给定时间内，允许分配的最大连接数（当为零时，没有限制）
-		Conf.REDIS_IdleTimeout = 200                 // #在给定时间内将会保持空闲状态，若到达时间限制则关闭连接（当为零时，没有限制）
-		Conf.IMG_PrefixUrl = ""                      //图片访问URL
-		Conf.IMG_SavePath = ""                       //图片上传地址
-		Conf.IMG_MaxSize = 2097152                   //#图片最大
-		Conf.IMG_AllowExts = ""                      //#图片格式
-		Conf.FILE_PrefixUrl = ""                     //文件访问URL前缀
-		Conf.FILE_SavePath = ""                      //文件保存目录
-		Conf.FILE_MaxSize = 2097152                  //#文件最大
-		Conf.FILE_AllowExts = ""                     //#文件格式
-		Conf.SYS_SQLAUTH = 0                         //是否开启数据权限，0不开启 1开启
+		fmt.Println("初始化配置文件...")
+		
+		// 设置默认配置
+		setDefaultConfig()
 		Conf.Write()
-
-	} else {
-		// 打开文件
-		file, _ := os.Open("assets/config/config.json")
-		// 关闭文件
+		fmt.Println("配置文件已创建，请根据实际情况修改 assets/config/config.json")
+	} else if err == nil {
+		// 配置文件存在，读取配置
+		file, err := os.Open(path)
+		if err != nil {
+			fmt.Printf("打开配置文件失败: %v", err)
+			setDefaultConfig()
+			return Conf
+		}
 		defer file.Close()
 
-		err := json.NewDecoder(file).Decode(Conf)
+		err = json.NewDecoder(file).Decode(Conf)
 		if err != nil {
-			fmt.Println("Error:", err)
+			fmt.Printf("解析配置文件失败: %v
+", err)
+			setDefaultConfig()
 		}
-		fmt.Println(Conf)
+	} else {
+		fmt.Printf("检查配置文件失败: %v
+", err)
+		setDefaultConfig()
 	}
 
 	return Conf
+}
+
+// setDefaultConfig 设置默认配置
+func setDefaultConfig() {
+	Conf.HTTP_RunMode = "debug"
+	Conf.HTTP_Port = 8080
+	Conf.HTTP_ReadTimeout = 60
+	Conf.HTTP_WriteTimeout = 60
+	Conf.HTTP_ServeUrl = "http://localhost:8080/"
+	Conf.HTTP_RuntimeRootPath = "assets/runtime"
+	Conf.HTTP_ServeCode = "A"
+	Conf.HTTP_ServeIp = "127.0.0.1"
+	
+	Conf.DB_Type = "mysql"
+	Conf.DB_User = "root"
+	Conf.DB_Password = "newe123"
+	Conf.DB_Host = "127.0.0.1:3306"
+	Conf.DB_Name = "newe"
+	Conf.DB_TablePrefix = ""
+	
+	Conf.REDIS_Host = "127.0.0.1:6379"
+	Conf.REDIS_Password = ""
+	Conf.REDIS_MaxIdle = 10
+	Conf.REDIS_MaxActive = 100
+	Conf.REDIS_IdleTimeout = 300
+	
+	Conf.IMG_PrefixUrl = "/images"
+	Conf.IMG_SavePath = "upload/images"
+	Conf.IMG_MaxSize = 2097152
+	Conf.IMG_AllowExts = "jpg,jpeg,png,gif"
+	
+	Conf.FILE_PrefixUrl = "/files"
+	Conf.FILE_SavePath = "upload/files"
+	Conf.FILE_MaxSize = 5242880
+	Conf.FILE_AllowExts = "pdf,doc,docx,xls,xlsx,txt"
+	
+	Conf.SYS_SQLAUTH = 0
 }
 
 func (c *Config) Write() {

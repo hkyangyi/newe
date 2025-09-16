@@ -4,20 +4,20 @@ import (
 	"errors"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const key string = "github.com/hkyangyi/newetoken"
 
-// 生成TOken
+// 生成Token
 func SetToken(uuid string) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := make(jwt.MapClaims)
-	claims["uuid"] = uuid                                                //用于在controller中确定用户
-	claims["exp"] = time.Now().Add(time.Hour * time.Duration(72)).Unix() //设置过期时间为72小时后
-	claims["iat"] = time.Now().Unix()
-	token.Claims = claims
+	claims := jwt.MapClaims{
+		"uuid": uuid, //用于在controller中确定用户
+		"exp":  time.Now().Add(time.Hour * 72).Unix(), //设置过期时间为72小时后
+		"iat":  time.Now().Unix(),
+	}
 
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(key))
 	if err != nil {
 		return "", err
@@ -34,13 +34,28 @@ func AuthToken(tokenString string) (string, error) {
 		return "", errors.New("HS256的token解析错误")
 	}
 
+	if !token.Valid {
+		return "", errors.New("token无效")
+	}
+
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return "", errors.New("ParseHStoken:claims类型转换失败")
 	}
-	exp := claims["exp"].(float64)
+
+	exp, ok := claims["exp"].(float64)
+	if !ok {
+		return "", errors.New("无效的过期时间")
+	}
+
 	if int64(exp) < time.Now().Unix() {
 		return "", errors.New("token已失效")
 	}
-	return claims["uuid"].(string), nil
+
+	uuid, ok := claims["uuid"].(string)
+	if !ok {
+		return "", errors.New("无效的用户标识")
+	}
+
+	return uuid, nil
 }

@@ -54,10 +54,10 @@ func AdminAuth() gin.HandlerFunc {
 		uuid, err := utils.AuthToken(token)
 
 		if err != nil {
-			worklog.Logio.WERR(err)
+			worklog.Logio.WERR(fmt.Sprintf("JWT验证失败: %s, token: %s", err.Error(), token))
 			c.JSON(401, Response{
 				Code:      10000,
-				Message:   err.Error(),
+				Message:   "身份验证失败，请重新登录",
 				Result:    nil,
 				Success:   "fail",
 				Timestamp: time.Now().Unix(),
