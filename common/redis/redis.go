@@ -15,95 +15,99 @@ type NeRedis struct {
 }
 
 var REDIS *NeRedis
-
 var ctx = context.Background()
 
-func NewRedis(host, pass string, idleTimeout, maxIdle, maxActive int) (*NeRedis, error) {
-	opts := &redis.Options{
-		Addr:         host,
-		Password:     pass,
-		DB:           0,
-		DialTimeout:  10 * time.Second,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  time.Duration(idleTimeout) * time.Second,
-		MaxIdleConns: maxIdle,
-		PoolSize:     maxActive,
-		PoolTimeout:  5 * time.Second,
-		MinIdleConns: 5,
+// NewRedis 创建 Redis 客户端，参数支持默认值和校验
+func NewRedis(host, pass string, idleTimeout, maxIdle, maxActive, minIdle int) (*NeRedis, error) {
+	if host == "" {
+		return nil, fmt.Errorf("Redis地址不能为空")
+	}
+	if idleTimeout <= 0 {
+		idleTimeout = 300
+	}
+	if maxIdle <= 0 {
+		maxIdle = 10
+	}
+	if maxActive <= 0 {
+		maxActive = 100
+	}
+	if minIdle < 0 {
+		minIdle = 0
 	}
 
-	REDIS = &NeRedis{}
-	REDIS.Conn = redis.NewClient(opts)
+	opts := &redis.Options{
+		Addr:            host,
+		Password:        pass,
+		DB:              0,
+		DialTimeout:     10 * time.Second,
+		ReadTimeout:     30 * time.Second,
+		WriteTimeout:    30 * time.Second,
+		ConnMaxIdleTime: time.Duration(idleTimeout) * time.Second, // go-redis v9 推荐
+		MaxIdleConns:    maxIdle,
+		PoolSize:        maxActive,
+		PoolTimeout:     5 * time.Second,
+		MinIdleConns:    minIdle,
+	}
 
-	// 使用带超时的上下文进行连接测试
+	client := redis.NewClient(opts)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	_, err := REDIS.Conn.Ping(ctx).Result()
-	if err != nil {
-		worklog.Logio.WERR(fmt.Sprintf("Redis连接失败: %v, Addr: %s", err, host))
+	if _, err := client.Ping(ctx).Result(); err != nil {
+		fmt.Printf("Redis连接失败: %v, Addr: %s\n", err, host)
 		return nil, fmt.Errorf("Redis连接失败: %v", err)
 	}
 
-	REDIS.Status = true
-	worklog.Logio.WTRACE(fmt.Sprintf("Redis连接成功: %s", host))
+	REDIS = &NeRedis{Conn: client, Status: true}
+	fmt.Printf("Redis连接成功: %s\n", host)
 	return REDIS, nil
 }
 
-// 设置缓存
+// Close 优雅关闭 Redis 连接
+func (a *NeRedis) Close() error {
+	if a.Conn != nil {
+		return a.Conn.Close()
+	}
+	return nil
+}
+
+// Set 设置缓存，ts为秒
 func (a *NeRedis) Set(key string, data interface{}, ts time.Duration) error {
 	value, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
-	tn := ts * time.Second
-	err = a.Conn.Set(ctx, key, value, tn).Err()
-	if err != nil {
-		fmt.Println("Failed to set key:", err)
-		return err
-	}
-	return nil
+	return a.Conn.Set(ctx, key, value, ts*time.Second).Err()
 }
 
-// 检测缓存中是否有KEY
+// Exists 检查缓存中是否存在 key
 func (a *NeRedis) Exists(key string) bool {
-
-	res, err := a.Conn.Do(ctx, "EXISTS", key).Bool()
+	res, err := a.Conn.Exists(ctx, key).Result()
 	if err != nil {
-		fmt.Println("rediserr", err)
+		fmt.Printf("Redis Exists失败: %v, key: %s\n", err, key)
 		return false
 	}
-	return res
+	return res > 0
 }
 
-// 获取数据
+// Get 获取缓存数据并反序列化到 v
 func (a *NeRedis) Get(key string, v interface{}) error {
-
 	reply, err := a.Conn.Get(ctx, key).Bytes()
 	if err != nil {
 		return err
 	}
-
-	err = json.Unmarshal(reply, &v)
-	return err
+	return json.Unmarshal(reply, v)
 }
 
-// 删除
+// Delete 删除缓存 key
 func (a *NeRedis) Delete(key string) (int64, error) {
-
 	return a.Conn.Del(ctx, key).Result()
 }
 
+// SetLong 永久保存 key，无过期时间
 func (a *NeRedis) SetLong(key string, data interface{}) error {
 	value, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
-	err = a.Conn.Do(ctx, "SET", key, value).Err()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return a.Conn.Set(ctx, key, value, 0).Err()
 }

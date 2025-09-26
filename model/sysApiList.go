@@ -2,69 +2,45 @@ package model
 
 import (
 	"errors"
-	"time"
 
 	"github.com/hkyangyi/newe/common/db"
-	"github.com/hkyangyi/newe/common/utils"
 )
 
+// SysApiList API接口表，支持分组（父级），自动写入所有注册路由
+// 父级分组如模块名，接口自动归类
+
 type SysApiList struct {
-	ID         string `gorm:"primary_key" json:"id" form:"id"`
-	MenuId     string `json:"menuId" form:"menuId"  dict:"MenuName_sysMenus" `
-	MenuName   string `gorm:"-" json:"menuName"`
-	Path       string `json:"path"`
-	Method     string `json:"method"`
-	Name       string `json:"name"`
-	CreateTime int64  `json:"createTime"` //创建时间
-	UpdateTime int64  `json:"updateTime"` //修改时间
-	Status     int    `json:"status"`     //角色状态(-1禁用，1启用)
-	utils.PageList
+	ID        int64  `gorm:"primaryKey;autoIncrement" json:"id"`       // 主键
+	ParentID  int64  `gorm:"type:bigint;index" json:"parent_id"`       // 父级分组ID
+	GroupName string `gorm:"type:varchar(32);index" json:"group_name"` // 分组名（如 user、order）
+	Name      string `gorm:"type:varchar(64)" json:"name"`             // 接口名称（如 用户列表）
+	Route     string `gorm:"type:varchar(128);index" json:"route"`     // 路由模板（如 /api/v1/user/:id）
+	Method    string `gorm:"type:varchar(10)" json:"method"`           // 请求方法
+	Desc      string `gorm:"type:varchar(255)" json:"desc"`            // 接口说明
+	CreatedAt int64  `json:"created_at"`                               // 创建时间
 }
 
-// 添加
-func (a *SysApiList) Add() error {
-	a.ID = utils.GetUUID()
-	a.CreateTime = time.Now().Unix()
-	a.UpdateTime = time.Now().Unix()
+func (SysApiList) TableName() string { return "sys_api_list" }
 
+// 执行注册数据库
+func regSysApiListTable() error {
+	if db.Db == nil {
+		return errors.New("db not initialized")
+	}
+	return db.Db.AutoMigrate(&SysApiList{})
+}
+
+func (a *SysApiList) Add() error {
 	err := db.Db.Create(a).Error
 	return err
 }
 
-// 删除
-func (a *SysApiList) Del() error {
-	err := db.Db.Model(a).Delete(a).Error
-	return err
-}
-
-// 编辑
-func (a *SysApiList) Edit() error {
-	if len(a.ID) != 32 {
-		return errors.New("缺少参数ID")
+// AddIfNotExists: 若接口(route+method)不存在则插入
+func (a *SysApiList) AddIfNotExists() error {
+	var exist SysApiList
+	err := db.Db.Where("route = ? AND method = ?", a.Route, a.Method).First(&exist).Error
+	if err == nil && exist.ID > 0 {
+		return nil // 已存在，不重复插入
 	}
-
-	a.UpdateTime = time.Now().Unix()
-	err := db.Db.Model(a).Updates(a).Error
-	return err
-}
-
-// 启停
-func (a *SysApiList) SetStatus() error {
-
-	a.UpdateTime = time.Now().Unix()
-	err := db.Db.Model(a).Update("status", a.Status).Error
-	return err
-}
-
-// 获取列表
-func (a *SysApiList) GetList(page utils.PageList, where string, v ...interface{}) utils.PageList {
-	var items []SysApiList
-	db.Db.Model(&SysApiList{}).Where(where, v...).Count(&page.Total).Order("create_time desc").Offset(page.GetOffice()).Limit(page.PageSize).Find(&items)
-	page.List = items
-	return page
-}
-
-// 根据path获取数据
-func (a *SysApiList) GetByPath() {
-	db.Db.Table("sys_api_list").Where("path = ?", a.Path).First(a)
+	return db.Db.Create(a).Error
 }

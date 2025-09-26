@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hkyangyi/newe/common/config"
 	"github.com/hkyangyi/newe/common/db"
 	"github.com/hkyangyi/newe/common/utils"
 
@@ -18,7 +17,7 @@ type SysDepart struct {
 	Pid        string      `json:"pid" form:"pid"`                  //父级ID
 	Name       string      `json:"name" form:"name"`                //分组名称（机构名称）
 	Code       string      `json:"code"`                            //分组编码
-	Type       int         `json:"type" dict:"TypeStr_DepartType"`  //类型（1集团，2公司，3部门，4服务门店）
+	Type       string      `json:"type" dict:"TypeStr_DepartType"`  //类型（1集团，2公司，3部门，4服务门店）
 	TypeStr    string      `json:"typeStr" gorm:"-"`
 	Telephone  string      `json:"telephone"`  //联系电话
 	Phone      string      `json:"phone"`      //联系手机
@@ -125,6 +124,29 @@ func (a *SysDepart) GetList(usdata SysMember) []SysDepart {
 	return list
 }
 
+// 获取不带角色的
+func (a *SysDepart) GetDepartTree(usdata SysMember) []SysDepart {
+	var items []SysDepart
+	var list []SysDepart
+	if usdata.Username == "admin" {
+		db.Db.Table("sys_depart").Where("type <> ?", "R").Order("sort_no asc").Find(&items)
+		list = SysDepartDigui(items, "", list)
+	} else {
+		var pdb SysDepart
+		db.Db.Table("sys_depart").Where("code", usdata.OrgCode).Order("sort_no asc").First(&pdb)
+		db.Db.Table("sys_depart").Where("code like ? and type <> ?", pdb.Code+"%", "R").Order("sort_no asc").Find(&items)
+		//items = append(items, pdb)
+		list = SysDepartDigui(items, pdb.Pid, list)
+	}
+	return list
+}
+
+func (a *SysDepart) GetRoleById() []SysDepart {
+	var items []SysDepart
+	db.Db.Table("sys_depart").Where("pid = ? and type = ?", a.ID, "R").Order("sort_no asc").Find(&items)
+	return items
+}
+
 func SysDepartDigui(items []SysDepart, pid string, list []SysDepart) []SysDepart {
 	var item []SysDepart
 	for _, v := range items {
@@ -166,7 +188,7 @@ func (a *SysDepart) GetCode() string {
 	var data = SysDepartDict{
 		ID:        utils.GetUUID(),
 		DepartId:  a.ID,
-		ServeCode: config.Conf.HTTP_ServeCode,
+		ServeCode: a.Type,
 	}
 	var count int64
 	db.Db.Model(&SysDepartDict{}).Where("serve_code = ?", data.ServeCode).Count(&count)

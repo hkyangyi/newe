@@ -66,13 +66,13 @@ func GetDict(key string) map[string]string {
 	rediskey := "DICT_" + key
 	var data = make(map[string]string)
 	//查询REDIS是否存在
-	if b := redis.REDIS.Exists(key); !b {
+	if b := redis.REDIS.Exists(rediskey); !b {
 
 		var (
 			fdb SysDictList
 			its []SysDictList
 		)
-		Db.Model(&SysDictList{}).Where("parent_name = ?", key).Find(&fdb)
+		Db.Model(&SysDictList{}).Where("value = ?", key).Find(&fdb)
 		if fdb.Type == 1 {
 			Db.Table("sys_dict_list").Where("parent_id = ?", fdb.ID).Order("sort asc").Find(&its)
 		} else {
@@ -103,15 +103,16 @@ func UpdateDict(key string) {
 		fdb SysDictList
 		its []SysDictList
 	)
-	Db.Model(&SysDictList{}).Where("parent_name = ?", key).Find(&fdb)
+	Db.Model(&SysDictList{}).Where("value = ?", key).Find(&fdb)
 
 	if fdb.Type == 1 {
 		Db.Table("sys_dict_list").Where("parent_id = ?", fdb.ID).Order("sort asc").Find(&its)
 	} else {
 
-		table := utils.Camel2Case(fdb.ParentName)
+		table := utils.Camel2Case(fdb.Value)
 		selstr := fmt.Sprintf("%s as value, %s as name", fdb.TableKey, fdb.TableVal)
 		Db.Table(table).Select(selstr).Scan(&its)
+		fmt.Println("itms:", its)
 
 	}
 
@@ -119,5 +120,6 @@ func UpdateDict(key string) {
 		ks := its[i].Value
 		data[ks] = its[i].Name
 	}
+
 	redis.REDIS.SetLong(rediskey, data)
 }

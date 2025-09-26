@@ -16,7 +16,7 @@ var (
 	WorkLog *worklog.WorkLog
 	MYDB    *gorm.DB
 	REDIS   *redis.NeRedis
-	WSMAG   *ws.WsManager
+	WSMAG   *ws.MainMag
 )
 
 // 检测唯一

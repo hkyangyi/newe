@@ -38,7 +38,8 @@ func RouteInit() {
 	//初始化系统路由
 	r := NewRoute("newesys")
 	fmt.Println(r)
-	roootRouter.RegRouter(r)
+	//roootRouter.RegRouter(r)
+	roootRouter.NewesysRouter(r)
 }
 
 func NewRoute(path string, handlers ...gin.HandlerFunc) *gin.RouterGroup {

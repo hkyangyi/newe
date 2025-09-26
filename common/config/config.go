@@ -70,13 +70,11 @@ func ReadConfig() *Config {
 
 		err = json.NewDecoder(file).Decode(Conf)
 		if err != nil {
-			fmt.Printf("解析配置文件失败: %v
-", err)
+			fmt.Printf("解析配置文件失败: %v", err)
 			setDefaultConfig()
 		}
 	} else {
-		fmt.Printf("检查配置文件失败: %v
-", err)
+		fmt.Printf("检查配置文件失败: %v", err)
 		setDefaultConfig()
 	}
 

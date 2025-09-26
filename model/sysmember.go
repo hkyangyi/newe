@@ -1,6 +1,8 @@
 package model
 
 import (
+	"errors"
+
 	"github.com/hkyangyi/newe/common/db"
 	"github.com/hkyangyi/newe/common/utils"
 )
@@ -9,13 +11,13 @@ type SysMember struct {
 	ID         string `gorm:"primary_key" json:"id"`                                  //
 	DepartId   string `json:"departId" form:"departId"  dict:"DepartName_sysDepart" ` //组织结构ID
 	DepartName string `json:"departName" gorm:"-"`
-	RoleId     string `json:"roleId" form:"roleId"  dict:"RoleName_sysRole" ` //角色ID
+	RoleId     string `json:"roleId" form:"roleId"  dict:"RoleName_sysDepart" ` //角色ID
 	RoleName   string `json:"roleName" gorm:"-"`
 	UID        string `json:"uid"`                      //会员ID
 	Username   string `json:"username" form:"username"` //登陆账号
 	Password   string `json:"password"`                 //密码
 	Nickname   string `json:"nickname" form:"nickname"` //昵称
-	Realname   string `json:"realname" form:"realname"` //真实姓名
+	RealName   string `json:"realName" form:"realName"` //真实姓名
 	Headimgurl string `json:"headimgurl"`               //头像
 	Mp         string `json:"mp"`                       //手机号
 	Idcard     string `json:"idcard"`                   //身份证号码
@@ -46,6 +48,9 @@ func (a *SysMember) Edit() error {
 func (a *SysMember) GetList(page utils.PageList, where string, v ...interface{}) utils.PageList {
 	var items []SysMember
 	db.Db.Model(&SysMember{}).Where(where, v...).Count(&page.Total).Order("create_time desc").Offset(page.GetOffice()).Limit(page.PageSize).Find(&items)
+	for i := 0; i < len(items); i++ {
+		items[i].Password = ""
+	}
 	page.List = items
 	return page
 }
@@ -83,5 +88,24 @@ func GetSysMemberByOrg(orgcode string) []SysMember {
 
 func (a *SysMember) EditPass(pass string) error {
 	err := db.Db.Model(a).Update("password", pass).Error
+	return err
+}
+
+// MemberChangePassword 修改用户密码（校验旧密码）
+func MemberChangePassword(memberID, oldPassword, newPassword string) error {
+	if memberID == "" || oldPassword == "" || newPassword == "" {
+		return errors.New("参数不完整")
+	}
+	var m SysMember
+	if err := db.Db.Where("id = ? ", memberID).First(&m).Error; err != nil {
+		return err
+	}
+
+	newpass := utils.EncodeMD5(newPassword)
+	if newpass == m.Password {
+		return errors.New("新密码不能与原密码相同")
+	}
+
+	err := db.Db.Model(&m).Update("password", newpass).Error
 	return err
 }
