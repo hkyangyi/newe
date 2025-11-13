@@ -71,9 +71,17 @@ func (a *App) Error(err error) {
 
 // 登陆失败
 func (a *App) LoginError(err error) {
+	var errmsg = "登录失败"
+	if err != nil {
+		errmsg = err.Error()
+	}
+
+	if err == nil {
+		err = nil
+	}
 	a.C.JSON(401, Response{
 		Code:      10000,
-		Message:   err.Error(),
+		Message:   errmsg,
 		Result:    nil,
 		Success:   false,
 		Timestamp: time.Now().Unix(),

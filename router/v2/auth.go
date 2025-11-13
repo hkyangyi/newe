@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hkyangyi/newe/common/redis"
@@ -102,6 +103,7 @@ func RefreshToken(c *gin.Context) {
 func LoginOut(c *gin.Context) {
 	var g = app.NewApp(c)
 	token := c.GetHeader("Authorization")
+	token = strings.TrimPrefix(token, "Bearer ")
 	uuid, err := utils.AuthToken(token)
 	if err != nil {
 		g.LoginError(nil)

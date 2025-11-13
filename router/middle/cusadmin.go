@@ -7,43 +7,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hkyangyi/newe/common/config"
+	"github.com/gin-gonic/gin"
 	"github.com/hkyangyi/newe/common/redis"
 	"github.com/hkyangyi/newe/common/utils"
 	"github.com/hkyangyi/newe/common/worklog"
-	"github.com/hkyangyi/newe/model"
-
-	"github.com/gin-gonic/gin"
+	"github.com/hkyangyi/newe/cusmodel"
 )
 
-type Response struct {
-	Code      int         `json:"code"`
-	Message   string      `json:"message"`
-	Result    interface{} `json:"result"`
-	Success   string      `json:"success"`
-	Timestamp int64       `json:"timestamp"`
-}
-
-func AdminAuth() gin.HandlerFunc {
+func CusAdminAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
-		// fmt.Println(path)
-		// // //index:= strings.Index(path,"/api")
-		// if strings.Index(path, "/") == 0 {
-		// 	path = path[1:]
-		// 	fmt.Println(path)
-		// }
-		// patharr := strings.Split(path, "/")
-		// if len(patharr) > 0 {
-		// 	fmt.Println(patharr)
-		// 	pathgroup:= strings.Join(path)
-		// 	apidata:= model.SysApi{
-		// 		Path: path,
-		// 		PathGroup: patharr[0],
-		// 	}
-		// }
-
-		//Authorization=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTgzNTI2MTcsImlhdCI6MTc1ODA5MzQxNywidXVpZCI6IkFVVEhfNzJiZjJjYWQ3ZjZmNGEzZjhhY2Q4ZDQ4MDg4ODUyOTNfYWRtaW4ifQ.Xvor8lZ4iqueCAtMs1pj_18UvTuIdNflnlBShfIvO_c
 
 		token := c.GetHeader("Authorization")
 		fmt.Println("token:", token)
@@ -56,6 +28,7 @@ func AdminAuth() gin.HandlerFunc {
 				Timestamp: time.Now().Unix(),
 			})
 			c.Abort()
+			return
 		}
 
 		// 兼容 Bearer 前缀
@@ -91,7 +64,7 @@ func AdminAuth() gin.HandlerFunc {
 			return
 		}
 		//从缓存中拿取数据
-		var data model.AdminAuth
+		var data cusmodel.CusAuth
 		errs := redis.REDIS.Get(uuid, &data)
 		if errs != nil {
 			c.JSON(401, Response{
@@ -104,16 +77,13 @@ func AdminAuth() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		//data.Refresh()
-		if config.Conf.SYS_SQLAUTH == 1 && data.Merdb.Username != "admin" {
-			// 可在此调用 SqlRuleVerify 检查接口权限，当前跳过
-		}
+
 		redis.REDIS.Set(uuid, data, 3600)
-		c.Set("AdminAuthData", data)
+		c.Set("CusAdminAuthData", data)
 
 		// 预采集请求体（仅非GET/HEAD且小于1MB），上传相关请求直接过滤不采集
 		var bodyLog string
-		if isUploadRequest(c) {
+		if isCusUploadRequest(c) {
 			bodyLog = "[filtered]"
 		} else if m := c.Request.Method; m != "GET" && m != "HEAD" {
 			cl := c.Request.ContentLength
@@ -130,19 +100,26 @@ func AdminAuth() gin.HandlerFunc {
 		c.Next() // 先执行后续业务，保证能拿到响应码
 
 		// 日志内容收集
-		var log model.SysOperationLog
-		log.MemberID = data.Merdb.ID
-		log.Username = data.Merdb.Username
+		var log cusmodel.CustomerOperationLog
+		log.Cid = data.CDB.Id
+		if data.Isadmin {
+
+			log.MemberID = data.CDB.Id
+			log.Username = data.CDB.Username
+		} else {
+			log.MemberID = data.MerDb.ID
+			log.Username = data.MerDb.Username
+		}
+
 		log.Method = c.Request.Method
 		log.RoutePattern = c.FullPath() // 路由模板，如 /api/v1/user/:id
-		//if  strings.Trim(log.RoutePattern)
 
 		log.ActualPath = c.Request.URL.Path // 实际请求路径
 		// 分组名可用路由前缀或自定义
 		log.GroupName = getGroupName(c.FullPath())
 		log.IP = c.ClientIP()
 		// 请求参数（GET用Query，其他用预采集的Body样本）
-		if isUploadRequest(c) {
+		if isCusUploadRequest(c) {
 			log.Params = "[filtered]"
 		} else if c.Request.Method == "GET" {
 			log.Params = c.Request.URL.RawQuery
@@ -166,7 +143,7 @@ func AdminAuth() gin.HandlerFunc {
 		} else {
 			apiName = log.Method + " " + log.RoutePattern
 		}
-		if apiID, err := (&model.SysOperationLog{RoutePattern: log.RoutePattern, Method: log.Method, GroupName: log.GroupName}).EnsureApiAndGetID(apiName); err == nil {
+		if apiID, err := (&cusmodel.CustomerOperationLog{RoutePattern: log.RoutePattern, Method: log.Method, GroupName: log.GroupName}).EnsureApiAndGetID(apiName); err == nil {
 			log.ApiID = apiID
 		}
 		// 日志入库
@@ -180,7 +157,7 @@ func AdminAuth() gin.HandlerFunc {
 }
 
 // isUploadRequest 判断是否上传相关请求，避免记录大二进制/敏感内容
-func isUploadRequest(c *gin.Context) bool {
+func isCusUploadRequest(c *gin.Context) bool {
 	ct := c.GetHeader("Content-Type")
 	if strings.Contains(strings.ToLower(ct), "multipart/form-data") {
 		return true
@@ -195,52 +172,3 @@ func isUploadRequest(c *gin.Context) bool {
 	}
 	return false
 }
-
-// getGroupName 从路由模板提取分组名（如 /api/v1/user/:id → user）
-func getGroupName(path string) string {
-	arr := strings.Split(path, "/")
-	// 去除所有 /:xxx 路径段
-	var clean []string
-	for _, v := range arr {
-		if v != "" && !strings.HasPrefix(v, ":") {
-			clean = append(clean, v)
-		}
-	}
-	// 取倒数第二个为分组名
-	if len(clean) >= 2 {
-		return clean[len(clean)-2]
-	}
-	return ""
-}
-
-// // 数据权限中间件
-// func SqlRuleVerify(c *gin.Context, data model.AdminAuth) error {
-// 	//请求路径
-// 	method := c.Request.Method
-// 	path := c.Request.URL.Path
-// 	fmt.Println(path)
-// 	fmt.Println(method)
-// 	apidata := GetApiData(path)
-// 	fmt.Println("apidata:", apidata)
-// 	if len(apidata.ID) != 32 {
-// 		return nil
-// 	}
-
-// 	if apidata.Status != 1 {
-// 		return errors.New("该接口已停用")
-// 	}
-
-// 	ruledb := GetRoleRules(apidata.ID, data.Merdb.RoleId)
-// 	fmt.Println(ruledb)
-
-// 	if len(ruledb.ID) != 32 {
-// 		return errors.New("您未添加该接口权限")
-// 	}
-
-// 	if ruledb.Status != 1 {
-// 		return errors.New("您已停用该接口权限")
-// 	}
-// 	return nil
-// }
-
-//更具PATH获取API数据

@@ -8,7 +8,7 @@ import (
 	"unicode"
 )
 
-func InArrar(key string, arr []string) bool {
+func InArray(key string, arr []string) bool {
 
 	for _, v := range arr {
 		if key == v {
@@ -78,6 +78,25 @@ func Camel2Case(name string) string {
 			buffer.Append(unicode.ToLower(r))
 		} else {
 			buffer.Append(r)
+		}
+	}
+	return buffer.String()
+}
+
+// 下划线写法转为驼峰式写法
+func SnakeToCamel(s string) string {
+	buffer := NewBuffer()
+	upperNext := false
+	for i, r := range s {
+		if r == '_' {
+			upperNext = true
+		} else {
+			if upperNext || i == 0 {
+				buffer.Append(unicode.ToUpper(r))
+				upperNext = false
+			} else {
+				buffer.Append(r)
+			}
 		}
 	}
 	return buffer.String()

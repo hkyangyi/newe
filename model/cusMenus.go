@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type SysMenus struct {
+type CustomerMenus struct {
 	ID         string `gorm:"primaryKey;size:64" json:"id" form:"id"` // 主键ID
 	Pid        string `json:"pid" form:"pid"`                         // 父级ID（根节点为空或0）
 	Level      int8   `json:"level" form:"level"`                     // 层级（0开始，写入时自动计算）
@@ -67,10 +67,10 @@ type SysMenus struct {
 	CreatedAt int64 `json:"createdAt"` // 创建时间 Unix 时间戳
 	UpdatedAt int64 `json:"updatedAt"` // 更新时间 Unix 时间戳
 
-	Children []SysMenus `gorm:"-" json:"children,omitempty"` // 子节点（递归组装，不入库）
+	Children []CustomerMenus `gorm:"-" json:"children,omitempty"` // 子节点（递归组装，不入库）
 }
 
-func (a *SysMenus) Add() error {
+func (a *CustomerMenus) Add() error {
 	a.ID = utils.GetUUID()
 	now := time.Now().Unix()
 	a.CreatedAt = now
@@ -86,7 +86,7 @@ func (a *SysMenus) Add() error {
 	return db.Db.Create(a).Error
 }
 
-func (a *SysMenus) Edit() error {
+func (a *CustomerMenus) Edit() error {
 	if a.ID == "" {
 		return errors.New("缺少参数ID")
 	}
@@ -95,18 +95,18 @@ func (a *SysMenus) Edit() error {
 	return db.Db.Model(a).Where("id = ?", a.ID).Updates(a).Error
 }
 
-func (a *SysMenus) Del() error {
+func (a *CustomerMenus) Del() error {
 	if a.ID == "" {
 		return errors.New("缺少参数ID")
 	}
-	return db.Db.Table("sys_menus").Where("id = ?", a.ID).Updates(map[string]interface{}{"is_deleted": -1, "updated_at": time.Now().Unix()}).Error
+	return db.Db.Table("customer_menus").Where("id = ?", a.ID).Delete(a).Error
 }
 
 // ensure/normalize fields before write
-func (m *SysMenus) BeforeCreate(tx *gorm.DB) error { return m.validate(tx, true) }
-func (m *SysMenus) BeforeUpdate(tx *gorm.DB) error { return m.validate(tx, false) }
+func (m *CustomerMenus) BeforeCreate(tx *gorm.DB) error { return m.validate(tx, true) }
+func (m *CustomerMenus) BeforeUpdate(tx *gorm.DB) error { return m.validate(tx, false) }
 
-func (m *SysMenus) normalizeBasic() {
+func (m *CustomerMenus) normalizeBasic() {
 	m.Name = strings.TrimSpace(m.Name)
 	m.Title = strings.TrimSpace(m.Title)
 	m.Path = strings.TrimSpace(m.Path)
@@ -127,7 +127,7 @@ func (m *SysMenus) normalizeBasic() {
 }
 
 // 归一化所有 int 标志字段：不为1则设为-1
-func (m *SysMenus) normalizeFlags() {
+func (m *CustomerMenus) normalizeFlags() {
 	flags := []*int{&m.KeepAlive, &m.HideInMenu, &m.HideInTab, &m.HideInBreadcrumb, &m.HideChildrenInMenu,
 		&m.FullPathKey, &m.AffixTab, &m.IgnoreAccess, &m.MenuVisibleWithForbidden, &m.OpenInNewWindow, &m.NoBasicLayout}
 	for _, f := range flags {
@@ -137,7 +137,7 @@ func (m *SysMenus) normalizeFlags() {
 	}
 }
 
-func (m *SysMenus) validate(tx *gorm.DB, isCreate bool) error {
+func (m *CustomerMenus) validate(tx *gorm.DB, isCreate bool) error {
 	fmt.Println(*m)
 	m.normalizeBasic()
 	m.normalizeFlags()
@@ -160,7 +160,7 @@ func (m *SysMenus) validate(tx *gorm.DB, isCreate bool) error {
 
 	// 唯一 name
 	var cnt int64
-	q := tx.Model(&SysMenus{}).Where("name = ? AND is_deleted = 1", m.Name)
+	q := tx.Model(&CustomerMenus{}).Where("name = ? AND is_deleted = 1", m.Name)
 	if !isCreate {
 		q = q.Where("id <> ?", m.ID)
 	}
@@ -170,7 +170,7 @@ func (m *SysMenus) validate(tx *gorm.DB, isCreate bool) error {
 
 	// 同级 path 唯一
 	cnt = 0
-	q2 := tx.Model(&SysMenus{}).Where("pid = ? AND path = ? AND is_deleted = 1", m.Pid, m.Path)
+	q2 := tx.Model(&CustomerMenus{}).Where("pid = ? AND path = ? AND is_deleted = 1", m.Pid, m.Path)
 	if !isCreate {
 		q2 = q2.Where("id <> ?", m.ID)
 	}
@@ -189,7 +189,7 @@ func (m *SysMenus) validate(tx *gorm.DB, isCreate bool) error {
 }
 
 // prepareJSON 保证写入数据库前 JSON 列为合法 JSON 文本（避免空字符串导致 MySQL 3140 错误）
-func (m *SysMenus) prepareJSON() {
+func (m *CustomerMenus) prepareJSON() {
 	// authority
 	if len(m.Authority) > 0 {
 		if b, err := json.Marshal(m.Authority); err == nil {
@@ -214,7 +214,7 @@ func (m *SysMenus) prepareJSON() {
 }
 
 // AfterFind 读取时反序列化 JSON
-func (m *SysMenus) AfterFind(tx *gorm.DB) (err error) {
+func (m *CustomerMenus) AfterFind(tx *gorm.DB) (err error) {
 	if m.AuthorityRaw != "" && json.Valid([]byte(m.AuthorityRaw)) {
 		var arr []string
 		if e := json.Unmarshal([]byte(m.AuthorityRaw), &arr); e == nil {
@@ -230,25 +230,14 @@ func (m *SysMenus) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
 
-func sanitizeRouteName(s string) string {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return "menu"
-	}
-	s = strings.ReplaceAll(s, " ", "")
-	s = strings.ReplaceAll(s, "/", "_")
-	s = strings.ReplaceAll(s, "-", "_")
-	return s
-}
-
-func GetMenusList() []SysMenus {
-	var items []SysMenus
+func GetCustomerMenusList() []CustomerMenus {
+	var items []CustomerMenus
 	db.Db.Where("is_deleted = 1").Order("order_no asc").Find(&items)
 	return items
 }
 
 // 根据部门ID获取菜单
-func SysMenusListGetByDepart(departId string) []SysMenus {
+func CustomerMenusListGetByDepart(departId string) []CustomerMenus {
 	var rules []SysDepartRules
 	db.Db.Where("depart_id = ?", departId).Find(&rules)
 	ids := make([]string, 0, len(rules))
@@ -258,13 +247,13 @@ func SysMenusListGetByDepart(departId string) []SysMenus {
 	if len(ids) == 0 {
 		return nil
 	}
-	var res []SysMenus
+	var res []CustomerMenus
 	db.Db.Where("is_deleted = 1 AND status = 1 AND id in ?", ids).Order("order_no asc").Find(&res)
 	return res
 }
 
-func SysButtonGetList() []string {
-	var items []SysMenus
+func CustomerButtonGetList() []string {
+	var items []CustomerMenus
 	db.Db.Where("is_deleted = 1 AND status = 1 AND type = 3").Order("order_no asc").Find(&items)
 	btns := make([]string, 0, len(items))
 	for _, v := range items {
@@ -275,47 +264,25 @@ func SysButtonGetList() []string {
 	return btns
 }
 
-// 获取按钮
-func SysButtonGetByDepart(departId string) []string {
-	var rules []SysDepartRules
-	db.Db.Where("depart_id = ?", departId).Find(&rules)
-	ids := make([]string, 0, len(rules))
-	for _, r := range rules {
-		ids = append(ids, r.MenuId)
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	var res []SysMenus
-	db.Db.Where("is_deleted = 1 AND status = 1 AND type = 3 AND id in ?", ids).Order("order_no asc").Find(&res)
-	btns := make([]string, 0, len(res))
-	for _, v := range res {
-		if v.Permission != "" {
-			btns = append(btns, v.Permission)
-		}
-	}
-	return btns
-}
-
-func (a *SysMenus) GetList(where string, v ...interface{}) []SysMenus {
-	var items []SysMenus
+func (a *CustomerMenus) GetList(where string, v ...interface{}) []CustomerMenus {
+	var items []CustomerMenus
 	db.Db.Where("is_deleted = 1").Where(where, v...).Order("order_no asc").Find(&items)
-	return buildTree(items, "")
+	return buildCustomerTree(items, "")
 }
 
 // GetMenuTree 返回全部正常且启用的菜单树（不含被禁用或删除的）
-func GetMenuTree() []SysMenus {
-	var items []SysMenus
+func CustomerMenuTree() []CustomerMenus {
+	var items []CustomerMenus
 	db.Db.Where("is_deleted = 1").Order("order_no asc").Find(&items)
-	return buildTree(items, "")
+	return buildCustomerTree(items, "")
 }
 
-func buildTree(items []SysMenus, pid string) []SysMenus {
-	var res []SysMenus
+func buildCustomerTree(items []CustomerMenus, pid string) []CustomerMenus {
+	var res []CustomerMenus
 	for i := range items {
 		if items[i].Pid == pid {
 			node := items[i]
-			node.Children = buildTree(items, node.ID)
+			node.Children = buildCustomerTree(items, node.ID)
 			// 计算 fullPath
 			if node.Pid == "" || node.Pid == "0" {
 				node.FullPath = node.Path
@@ -334,22 +301,4 @@ func buildTree(items []SysMenus, pid string) []SysMenus {
 		}
 	}
 	return res
-}
-
-// 用户修改信息
-func (a *SysMember) EditProfile() error {
-	if a.ID == "" {
-		return errors.New("缺少参数ID")
-	}
-
-	err := db.Db.Model(a).Where("id = ?", a.ID).Updates(map[string]interface{}{
-		"nickname":  a.Nickname,
-		"real_name": a.RealName,
-		"sex":       a.Sex,
-		"mp":        a.Mp,
-
-		"update_time": time.Now().Unix(),
-	}).Error
-
-	return err
 }

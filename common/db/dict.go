@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/hkyangyi/newe/common/redis"
 	"github.com/hkyangyi/newe/common/utils"
@@ -21,15 +22,16 @@ type SysDictList struct {
 }
 
 func DictInit() {
+	time.Sleep(10 * time.Second)
 	var items []SysDictList
 	Db.Model(&SysDictList{}).Where("parent_id = ?", "").Find(&items)
 	for _, v := range items {
-		rediskey := "DICT_" + v.ParentName
+		rediskey := "DICT_" + v.Value
 		var its []SysDictList
 		if v.Type == 1 {
 			Db.Table("sys_dict_list").Where("parent_id = ?", v.ID).Order("sort asc").Find(&its)
 		} else {
-			table := utils.Camel2Case(v.ParentName)
+			table := utils.Camel2Case(v.Value)
 			selstr := fmt.Sprintf("%s as value, %s as name", v.TableKey, v.TableVal)
 			Db.Table(table).Select(selstr).Scan(&its)
 		}
@@ -77,7 +79,7 @@ func GetDict(key string) map[string]string {
 			Db.Table("sys_dict_list").Where("parent_id = ?", fdb.ID).Order("sort asc").Find(&its)
 		} else {
 
-			table := utils.Camel2Case(fdb.ParentName)
+			table := utils.Camel2Case(fdb.Value)
 			selstr := fmt.Sprintf("%s as value, %s as name", fdb.TableKey, fdb.TableVal)
 			Db.Table(table).Select(selstr).Scan(&its)
 

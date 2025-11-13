@@ -1,11 +1,11 @@
-package v2
+package cus
 
 import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hkyangyi/newe/common/utils"
-	"github.com/hkyangyi/newe/model"
+	"github.com/hkyangyi/newe/cusmodel"
 	"github.com/hkyangyi/newe/router/app"
 )
 
@@ -15,14 +15,24 @@ func RegisterOplogRoutes(g *gin.RouterGroup) {
 
 func OplogGetPage(c *gin.Context) {
 	var a = app.NewApp(c)
-	var data model.SysOperationLog
+	var data cusmodel.CustomerOperationLog
 	if err := a.Bind(&data); err != nil {
 		a.Error(err)
 		return
 	}
 
+	merdata, b := a.C.Get("CusAdminAuthData")
+	if !b {
+		a.LoginError(nil)
+		return
+	}
+	mer := merdata.(cusmodel.CusAuth)
+
 	var wheres []string
 	var params []interface{}
+
+	wheres = append(wheres, "cid = ?")
+	params = append(params, mer.CDB.Id)
 
 	//用户查询根据用户名
 	if data.Username != "" {

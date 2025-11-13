@@ -43,3 +43,27 @@ func Run() {
 	//go DictInit()
 	HttpServeRun()
 }
+
+func InitCus() {
+	//读取配置文件
+	Conf = config.ReadConfig()
+
+	//开启日志系统
+	WorkLog = worklog.WorkLogInit(Conf.HTTP_RuntimeRootPath)
+	//数据库连接
+	MYDB = db.GormInit(Conf.DB_Host, Conf.DB_User, Conf.DB_Password, Conf.DB_Name)
+	REDIS, _ = redis.NewRedis(Conf.REDIS_Host, Conf.REDIS_Password, Conf.REDIS_IdleTimeout, Conf.REDIS_MaxIdle, Conf.REDIS_MaxActive, 1)
+	//初始化路由
+	CusRouteInit()
+	//启动WEB服务
+	//InitHttpServe()
+}
+
+func CusRun() {
+	InitHttpServe()
+	//启动ws管理器
+	WSMAG = ws.NewMainMag()
+	//读取字典写入REDIS
+	//go DictInit()
+	HttpServeRun()
+}

@@ -28,6 +28,7 @@ func NewesysRouter(r *gin.RouterGroup) {
 
 	menu := r.Group("menu", middle.AdminAuth())
 	menu.GET("all", v2.GetMenuAll)
+	v2.RegisterCustomerMenusRoutes(r.Group("cusmenu", middle.AdminAuth()))
 	//用户中心
 	v2.RegisterUserRoutes(r.Group("sysuser", middle.AdminAuth()))
 	//注册菜单路由
@@ -41,11 +42,14 @@ func NewesysRouter(r *gin.RouterGroup) {
 	//注册操作日志路由
 	v2.RegisterOplogRoutes(r.Group("oplog", middle.AdminAuth()))
 	//v2.RegisterSysApiListRoutes(r.Group("sysapi", middle.AdminAuth()))
+	//注册开发者路由
+	v2.RegisterDevRoutes(r.Group("dev", middle.AdminAuth()))
 
 	base := r.Group("base", middle.AdminAuth())
 	//检测唯一性
 	base.GET("verifysole", v2.Verifysole)
 	//上传
 	base.POST("upload", v2.UploadFile)
+	v2.RegisterUploadRoutes(base)
 
 }

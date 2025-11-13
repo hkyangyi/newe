@@ -1,4 +1,4 @@
-package model
+package cusmodel
 
 import (
 	"os"
@@ -11,8 +11,9 @@ import (
 // SysUpload 上传记录表（图片/文件统一记录）
 // - 采用 1/-1 布尔语义：Status=1 正常；IsDeleted=1 正常，-1 删除；IsImage=1 图片，-1 文件
 // - 便于按 Md5/Sha1 去重复用；同时保留存储提供商、路径、URL 等信息
-type SysUpload struct {
+type CustomerUpload struct {
 	ID       string `gorm:"primaryKey;autoIncrement" json:"id"`     // 主键（自增）
+	Cid      string `gorm:"type:varchar(64);index" json:"cid"`      // 客户ID
 	MemberID string `gorm:"type:varchar(64);index" json:"memberId"` // 上传人ID（member_id）
 
 	OriginalName string `gorm:"type:varchar(255)" json:"originalName"` // 原始文件名（含扩展名）
@@ -35,13 +36,13 @@ type SysUpload struct {
 	utils.PageList
 }
 
-func (a *SysUpload) Add() error {
+func (a *CustomerUpload) Add() error {
 	a.CreatedAt = time.Now().Unix()
 	err := db.Db.Create(a).Error
 	return err
 }
 
-func (a *SysUpload) Del() error {
+func (a *CustomerUpload) Del() error {
 	//删除文件
 	os.Remove(a.Path)
 	//删除记录
@@ -50,8 +51,8 @@ func (a *SysUpload) Del() error {
 }
 
 // 批量删除
-func (a *SysUpload) DelBatch(ids []int64) error {
-	var list []SysUpload
+func (a *CustomerUpload) DelBatch(ids []int64) error {
+	var list []CustomerUpload
 	err := db.Db.Where("id in ?", ids).Find(&list).Error
 	if err != nil {
 
@@ -61,13 +62,13 @@ func (a *SysUpload) DelBatch(ids []int64) error {
 		//删除文件
 		os.Remove(v.Path)
 	}
-	err = db.Db.Where("id in ?", ids).Delete(&SysUpload{}).Error
+	err = db.Db.Where("id in ?", ids).Delete(&CustomerUpload{}).Error
 	return err
 }
 
-func (a *SysUpload) GetPage(page utils.PageList, where string, v ...interface{}) (utils.PageList, error) {
-	var items []SysUpload
-	err := db.Db.Model(&SysUpload{}).Where(where, v...).Count(&page.Total).Order("created_at desc").Offset(page.GetOffice()).Limit(page.PageSize).Find(&items).Error
+func (a *CustomerUpload) GetPage(page utils.PageList, where string, v ...interface{}) (utils.PageList, error) {
+	var items []CustomerUpload
+	err := db.Db.Model(&CustomerUpload{}).Where(where, v...).Count(&page.Total).Order("created_at desc").Offset(page.GetOffice()).Limit(page.PageSize).Find(&items).Error
 	page.List = items
 	return page, err
 }

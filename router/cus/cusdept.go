@@ -1,4 +1,4 @@
-package v2
+package cus
 
 import (
 	"errors"
@@ -6,11 +6,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hkyangyi/newe/common/utils"
-	"github.com/hkyangyi/newe/model"
+	"github.com/hkyangyi/newe/cusmodel"
 	"github.com/hkyangyi/newe/router/app"
 )
 
-func RegisterSysDepartRoutes(g *gin.RouterGroup) {
+func RegisterCusDepartRoutes(g *gin.RouterGroup) {
 	g.POST("add", DepartAdd)
 	g.PUT("edit", DepartEdit)
 	g.DELETE("del", DepartDel)
@@ -23,11 +23,18 @@ func RegisterSysDepartRoutes(g *gin.RouterGroup) {
 
 func DepartAdd(c *gin.Context) {
 	var a = app.NewApp(c)
-	var data model.SysDepart
+	var data cusmodel.CustomerDepart
 	if err := a.Bind(&data); err != nil {
 		a.Error(err)
 		return
 	}
+	merdata, b := a.C.Get("CusAdminAuthData")
+	if !b {
+		a.LoginError(errors.New("登陆超时"))
+		return
+	}
+	mer := merdata.(cusmodel.CusAuth)
+	data.Cid = mer.CDB.Id
 
 	err := data.Add()
 	if err != nil {
@@ -40,11 +47,19 @@ func DepartAdd(c *gin.Context) {
 
 func DepartEdit(c *gin.Context) {
 	var a = app.NewApp(c)
-	var data model.SysDepart
+	var data cusmodel.CustomerDepart
 	if err := a.Bind(&data); err != nil {
 		a.Error(err)
 		return
 	}
+
+	merdata, b := a.C.Get("CusAdminAuthData")
+	if !b {
+		a.LoginError(errors.New("登陆超时"))
+		return
+	}
+	mer := merdata.(cusmodel.CusAuth)
+	data.Cid = mer.CDB.Id
 
 	err := data.Edit()
 	if err != nil {
@@ -57,11 +72,18 @@ func DepartEdit(c *gin.Context) {
 
 func DepartDel(c *gin.Context) {
 	var a = app.NewApp(c)
-	var data model.SysDepart
+	var data cusmodel.CustomerDepart
 	if err := a.Bind(&data); err != nil {
 		a.Error(err)
 		return
 	}
+	merdata, b := a.C.Get("CusAdminAuthData")
+	if !b {
+		a.LoginError(errors.New("登陆超时"))
+		return
+	}
+	mer := merdata.(cusmodel.CusAuth)
+	data.Cid = mer.CDB.Id
 
 	err := data.Del()
 	if err != nil {
@@ -74,25 +96,33 @@ func DepartDel(c *gin.Context) {
 
 func DepartGetList(c *gin.Context) {
 	var a = app.NewApp(c)
-	var data model.SysDepart
+	var data cusmodel.CustomerDepart
 	if err := a.Bind(&data); err != nil {
 		a.Error(err)
 		return
 	}
-	merdata, b := a.C.Get("AdminAuthData")
+	merdata, b := a.C.Get("CusAdminAuthData")
 	if !b {
 		a.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(model.AdminAuth)
-	items := data.GetList(mer.Merdb)
-	a.SUCCESS(items)
-	return
+	mer := merdata.(cusmodel.CusAuth)
+	data.Cid = mer.CDB.Id
+
+	if mer.Isadmin {
+		items := data.GetListByAdmin()
+		a.SUCCESS(items)
+		return
+	} else {
+		items := data.GetListByMember(mer.MerDb)
+		a.SUCCESS(items)
+		return
+	}
 }
 
 func DepartRulesGet(c *gin.Context) {
 	var a = app.NewApp(c)
-	var data model.SysDepart
+	var data cusmodel.CustomerDepart
 	if err := a.Bind(&data); err != nil {
 		a.Error(err)
 		return
@@ -119,7 +149,7 @@ func DepartRulesSave(c *gin.Context) {
 		a.Error(err)
 		return
 	}
-	var dp = model.SysDepart{
+	var dp = cusmodel.CustomerDepart{
 		ID: data.Id,
 	}
 
@@ -167,14 +197,14 @@ func DepartRulesSave(c *gin.Context) {
 // 获取不含角色的树形结构
 func departTree(c *gin.Context) {
 	var a = app.NewApp(c)
-	var data model.SysDepart
-	merdata, b := a.C.Get("AdminAuthData")
+	var data cusmodel.CustomerDepart
+	merdata, b := a.C.Get("CusAdminAuthData")
 	if !b {
 		a.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(model.AdminAuth)
-	items := data.GetDepartTree(mer.Merdb)
+	mer := merdata.(cusmodel.CusAuth)
+	items := data.GetDepartTree(mer.MerDb)
 	a.SUCCESS(items)
 	return
 }
@@ -182,7 +212,7 @@ func departTree(c *gin.Context) {
 // 根据部门ID获取角色
 func deptGetRoles(c *gin.Context) {
 	var a = app.NewApp(c)
-	var data model.SysDepart
+	var data cusmodel.CustomerDepart
 	if err := a.Bind(&data); err != nil {
 		a.Error(err)
 		return

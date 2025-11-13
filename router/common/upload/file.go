@@ -111,7 +111,7 @@ func (a *Field) ImagesSave() {
 		URL:        a.Url,             //
 		Size:       a.Size,            //
 		CreateTime: time.Now().Unix(), //
-		CreateName: a.Usdb.Realname,   //
+		CreateName: a.Usdb.RealName,   //
 		DepartId:   a.Usdb.DepartId,   //
 	}
 	model.ImagesAdd(data)

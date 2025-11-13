@@ -1,4 +1,4 @@
-package v2
+package cus
 
 import (
 	"bytes"
@@ -21,7 +21,7 @@ import (
 	"github.com/hkyangyi/newe/common/config"
 	"github.com/hkyangyi/newe/common/db"
 	"github.com/hkyangyi/newe/common/utils"
-	"github.com/hkyangyi/newe/model"
+	"github.com/hkyangyi/newe/cusmodel"
 	"github.com/hkyangyi/newe/router/app"
 )
 
@@ -37,17 +37,17 @@ func UploadFile(c *gin.Context) {
 	a := app.NewApp(c)
 
 	// 登录用户信息
-	auth, ok := a.C.Get("AdminAuthData")
+	auth, ok := a.C.Get("CusAdminAuthData")
 	if !ok {
 		a.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := auth.(model.AdminAuth)
+	mer := auth.(cusmodel.CusAuth)
 	if err := mer.RefreshByMerdb(); err != nil {
 		a.LoginError(err)
 		return
 	}
-	memberID := mer.Merdb.ID
+	memberID := mer.MerDb.ID
 
 	// 读取上传文件
 	file, header, err := c.Request.FormFile("file")
@@ -91,7 +91,7 @@ func UploadFile(c *gin.Context) {
 	urlPrefix = strings.TrimRight(conf.HTTP_ServeUrl, "/") + strings.TrimRight(urlPrefix, "/")
 	// 生成文件名
 	saveName := genFileName(ext)
-	saveDir := filepath.Join(baseSave, datePath)
+	saveDir := filepath.Join(baseSave, mer.CDB.Id, datePath)
 	if err := os.MkdirAll(saveDir, 0755); err != nil {
 		a.Error(err)
 		return
@@ -222,11 +222,12 @@ func UploadFile(c *gin.Context) {
 	}
 
 	// 统一 URL，避免重复斜杠
-	url := strings.TrimRight(urlPrefix, "/") + "/" + filepath.ToSlash(filepath.Join(datePath, saveName))
+	url := strings.TrimRight(urlPrefix, "/") + "/" + filepath.ToSlash(filepath.Join(mer.CDB.Id, datePath, saveName))
 
 	// 记录入库
-	rec := model.SysUpload{
+	rec := cusmodel.CustomerUpload{
 		ID:           utils.GetUUID(),
+		Cid:          mer.MerDb.Cid,
 		MemberID:     memberID,
 		OriginalName: origName,
 		FileName:     saveName,
@@ -308,12 +309,12 @@ func getFilePage(c *gin.Context) {
 	var g = app.NewApp(c)
 	var req FileQuery
 	// 鉴权
-	merdata, ok := g.C.Get("AdminAuthData")
+	merdata, ok := g.C.Get("CusAdminAuthData")
 	if !ok {
 		g.LoginError(errors.New("登陆超时"))
 		return
 	}
-	mer := merdata.(model.AdminAuth)
+	mer := merdata.(cusmodel.CusAuth)
 	if err := mer.RefreshByMerdb(); err != nil {
 		g.LoginError(err)
 		return
@@ -326,8 +327,8 @@ func getFilePage(c *gin.Context) {
 
 	var where []string
 	var params []interface{}
-	where = append(where, " member_id = ? and status = 1")
-	params = append(params, mer.Merdb.ID)
+	where = append(where, " member_id = ? and status = 1 and cid = ? ")
+	params = append(params, mer.MerDb.ID, mer.MerDb.Cid)
 	if req.FileType == 1 {
 		where = append(where, " is_image = 1 ")
 	}
@@ -353,7 +354,7 @@ func getFilePage(c *gin.Context) {
 	}
 	whereStr := strings.Join(where, " AND ")
 	page := utils.PageList{Page: req.Page, PageSize: req.PageSize}
-	var sup model.SysUpload
+	var sup cusmodel.CustomerUpload
 	items, _ := sup.GetPage(page, whereStr, params...)
 
 	g.SUCCESS(items)
