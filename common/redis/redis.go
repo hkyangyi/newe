@@ -111,3 +111,30 @@ func (a *NeRedis) SetLong(key string, data interface{}) error {
 	}
 	return a.Conn.Set(ctx, key, value, 0).Err()
 }
+
+// SetIncr 设置某 key 自增值
+func (a *NeRedis) SetIncr(key string, v int64, expire int64) error {
+	_, err := a.Conn.SetNX(ctx, key, v, time.Duration(expire)*time.Second).Result()
+	return err
+}
+
+// GetIncr 获取某 key 自增值
+func (a *NeRedis) GetIncr(key string) (int64, error) {
+	val, err := a.Conn.Get(ctx, key).Int64()
+	if err != nil {
+		return 0, err
+	}
+	return val, nil
+}
+
+// Incr 某 key 自增 v，expire为过期时间，单位秒
+func (a *NeRedis) Incr(key string, v int64, expire int64) error {
+	val, err := a.Conn.IncrBy(ctx, key, v).Result()
+	if err != nil {
+		return err
+	}
+	if val == v && expire > 0 {
+		a.Conn.Expire(ctx, key, time.Duration(expire)*time.Second)
+	}
+	return nil
+}

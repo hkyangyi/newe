@@ -31,6 +31,11 @@ type SysMember struct {
 	utils.PageList
 }
 
+func GetMemberByID(id string, member *SysMember) error {
+	err := db.Db.Where("id = ?", id).First(member).Error
+	return err
+}
+
 // 添加
 func (a *SysMember) Add() error {
 	a.ID = utils.GetUUID()
