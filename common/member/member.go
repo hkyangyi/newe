@@ -8,7 +8,7 @@ import (
 )
 
 // 获取在线用户
-func GetOnlineMembers(orgcode string) []model.SysMember {
+func GetOnlineMembers() []model.SysMember {
 	//获取ws管理器地址
 	wsgmag := ws.MainHub.Get("NeweSysAdmin")
 	var members []model.SysMember

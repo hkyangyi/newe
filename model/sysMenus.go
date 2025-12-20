@@ -300,36 +300,32 @@ func SysButtonGetByDepart(departId string) []string {
 func (a *SysMenus) GetList(where string, v ...interface{}) []SysMenus {
 	var items []SysMenus
 	db.Db.Where("is_deleted = 1").Where(where, v...).Order("order_no asc").Find(&items)
-	return buildTree(items, "")
+	return buildTree(items, SysMenus{})
 }
 
 // GetMenuTree 返回全部正常且启用的菜单树（不含被禁用或删除的）
 func GetMenuTree() []SysMenus {
 	var items []SysMenus
 	db.Db.Where("is_deleted = 1").Order("order_no asc").Find(&items)
-	return buildTree(items, "")
+	return buildTree(items, SysMenus{})
 }
 
-func buildTree(items []SysMenus, pid string) []SysMenus {
+func buildTree(items []SysMenus, p SysMenus) []SysMenus {
 	var res []SysMenus
 	for i := range items {
-		if items[i].Pid == pid {
+		if items[i].Pid == p.ID || (items[i].Pid == "" && p.ID == "") {
 			node := items[i]
-			node.Children = buildTree(items, node.ID)
 			// 计算 fullPath
 			if node.Pid == "" || node.Pid == "0" {
 				node.FullPath = node.Path
 				node.Level = 0
 			} else {
-				// 查找父级 fullPath
-				for _, p := range items {
-					if p.ID == node.Pid {
-						node.FullPath = strings.TrimRight(p.FullPath, "/") + node.Path
-						node.Level = p.Level + 1
-						break
-					}
-				}
+				fmt.Println(p.FullPath)
+				node.FullPath = p.FullPath + node.Path
+				fmt.Println("fullpath", node.FullPath)
+				node.Level = p.Level + 1
 			}
+			node.Children = buildTree(items, node)
 			res = append(res, node)
 		}
 	}
