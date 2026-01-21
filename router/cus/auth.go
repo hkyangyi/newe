@@ -54,15 +54,17 @@ func (a *AuthFrom) MerLogin() (cusmodel.CusAuth, error) {
 	//查询用户信息
 	merdb, err := cusmodel.FindMemberByUsername(a.Username, utils.EncodeMD5(a.Password))
 	if err != nil {
-		cdb, err := cusmodel.FindCusUserByUsername(a.Username, utils.EncodeMD5(a.Password))
-		if err != nil {
-			LoginErrCount++
-			redis.REDIS.Set(rediskey, LoginErrCount, 60*60*24)
-			return data, errors.New("账号或密码错误,您还有" + strconv.Itoa(5-LoginErrCount) + "次机会")
-		}
-		data.Isadmin = true
-		data.CDB = cdb
+		// cdb, err := cusmodel.FindCusUserByUsername(a.Username, utils.EncodeMD5(a.Password))
+		// if err != nil {
+		LoginErrCount++
+		redis.REDIS.Set(rediskey, LoginErrCount, 60*60*24)
+		return data, errors.New("账号或密码错误,您还有" + strconv.Itoa(5-LoginErrCount) + "次机会")
+		// }
+		// data.Isadmin = true
+		// data.CDB = cdb
 	}
+
+	data.Isadmin = merdb.IsAdmin == 1
 
 	//登陆成功
 	data.MerDb = merdb
@@ -71,11 +73,11 @@ func (a *AuthFrom) MerLogin() (cusmodel.CusAuth, error) {
 	}
 	var authkey string
 
-	if data.Isadmin {
-		authkey = fmt.Sprintf("CUS_AUTH_%s_%s", data.CDB.Id, data.CDB.Username)
-	} else {
-		authkey = fmt.Sprintf("CUS_AUTH_%s_%s", data.MerDb.ID, data.MerDb.Username)
-	}
+	// if data.Isadmin {
+	// 	authkey = fmt.Sprintf("CUS_AUTH_%s_%s", data.CDB.Id, data.CDB.Username)
+	// } else {
+	authkey = fmt.Sprintf("CUS_AUTH_%s_%s", data.MerDb.ID, data.MerDb.Username)
+	//}
 
 	token, _ := utils.SetToken(authkey)
 	data.Token = token
@@ -105,11 +107,11 @@ func RefreshToken(c *gin.Context) {
 		return
 	}
 	var authkey string
-	if mer.Isadmin {
-		authkey = fmt.Sprintf("CUS_AUTH_%s_%s", mer.CDB.Id, mer.CDB.Username)
-	} else {
-		authkey = fmt.Sprintf("CUS_AUTH_%s_%s", mer.MerDb.ID, mer.MerDb.Username)
-	}
+	// if mer.Isadmin {
+	// 	authkey = fmt.Sprintf("CUS_AUTH_%s_%s", mer.CDB.Id, mer.CDB.Username)
+	// 	} else {
+	authkey = fmt.Sprintf("CUS_AUTH_%s_%s", mer.MerDb.ID, mer.MerDb.Username)
+	//}
 	token, _ := utils.SetToken(authkey)
 	mer.Token = token
 	redis.REDIS.Set(authkey, mer, 60*60)

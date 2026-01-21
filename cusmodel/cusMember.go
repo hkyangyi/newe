@@ -30,6 +30,7 @@ type CustomerMember struct {
 	CreateTime int64  `json:"createTime"`               //创建时间
 	UpdateTime int64  `json:"updateTime"`               //更新时间
 	Files      string `json:"files"`                    //附件
+	IsAdmin    int    `json:"isAdmin"`                  //是否管理员 1是0否
 	utils.PageList
 }
 
@@ -45,6 +46,7 @@ func (a *CustomerMember) Add() error {
 
 // 编辑
 func (a *CustomerMember) Edit() error {
+
 	err := db.Db.Model(a).Where("cid = ?", a.Cid).Updates(a).Error
 	return err
 }
@@ -62,6 +64,10 @@ func (a *CustomerMember) GetList(page utils.PageList, where string, v ...interfa
 
 // 删除
 func (a *CustomerMember) Del() error {
+	a.Refresh()
+	if a.IsAdmin == 1 {
+		return errors.New("管理员账号无法删除")
+	}
 	err := db.Db.Model(a).Where("cid = ? and id = ? ", a.Cid, a.ID).Delete(a).Error
 	return err
 }

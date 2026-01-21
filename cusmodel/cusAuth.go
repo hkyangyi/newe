@@ -11,27 +11,27 @@ type CusAuth struct {
 
 // 刷新用户信息
 func (a *CusAuth) RefreshByMerdb() error {
-	if a.Isadmin {
-		err := db.Db.Table("customer_users").Where("id = ?", a.CDB.Id).First(&a.CDB).Error
-		if err != nil {
-			return err
-		}
-		a.CDB.Password = ""
-		a.MerDb = CustomerMember{}
-		return nil
-	} else {
+	// if a.Isadmin {
+	// 	err := db.Db.Table("customer_users").Where("id = ?", a.CDB.Id).First(&a.CDB).Error
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	a.CDB.Password = ""
+	// 	a.MerDb = CustomerMember{}
+	// 	return nil
+	// } else {
 
-		err := db.Db.Table("customer_member").Where("id = ?", a.MerDb.ID).First(&a.MerDb).Error
-		if err != nil {
-			return err
-		}
-
-		a.MerDb.Password = ""
-		err = db.Db.Table("customer_users").Where("id = ?", a.MerDb.Cid).First(&a.CDB).Error
-		if err != nil {
-			return err
-		}
-		a.CDB.Password = ""
-		return nil
+	err := db.Db.Table("customer_member").Where("id = ?", a.MerDb.ID).First(&a.MerDb).Error
+	if err != nil {
+		return err
 	}
+
+	a.MerDb.Password = ""
+	err = db.Db.Table("customer_users").Where("id = ?", a.MerDb.Cid).First(&a.CDB).Error
+	if err != nil {
+		return err
+	}
+	a.CDB.Password = ""
+	return nil
+	//}
 }

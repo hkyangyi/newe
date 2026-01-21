@@ -68,6 +68,41 @@ type CustomerMenus struct {
 	Children []CustomerMenus `gorm:"-" json:"children,omitempty"` // 子节点（递归组装，不入库）
 }
 
+func (a *CustomerMenus) GetList(where string, v ...interface{}) []CustomerMenus {
+	var items []CustomerMenus
+	db.Db.Where("is_deleted = 1").Where(where, v...).Order("order_no asc").Find(&items)
+	return buildTree(items, CustomerMenus{})
+}
+
+// GetMenuTree 返回全部正常且启用的菜单树（不含被禁用或删除的）
+func GetMenuTree() []CustomerMenus {
+	var items []CustomerMenus
+	db.Db.Where("is_deleted = 1").Order("order_no asc").Find(&items)
+	return buildTree(items, CustomerMenus{})
+}
+
+func buildTree(items []CustomerMenus, p CustomerMenus) []CustomerMenus {
+	var res []CustomerMenus
+	for i := range items {
+		if items[i].Pid == p.ID || (items[i].Pid == "" && p.ID == "") {
+			node := items[i]
+			// 计算 fullPath
+			if node.Pid == "" || node.Pid == "0" {
+				node.FullPath = node.Path
+				node.Level = 0
+			} else {
+				fmt.Println(p.FullPath)
+				node.FullPath = p.FullPath + node.Path
+				fmt.Println("fullpath", node.FullPath)
+				node.Level = p.Level + 1
+			}
+			node.Children = buildTree(items, node)
+			res = append(res, node)
+		}
+	}
+	return res
+}
+
 func CustomerButtonGetList() []string {
 	var items []CustomerMenus
 	db.Db.Where("is_deleted = 1 AND status = 1 AND type = 3").Order("order_no asc").Find(&items)
@@ -259,17 +294,21 @@ func CustomerMenusListGetByDepart(departId string) []CustomerMenus {
 	return res
 }
 
-func (a *CustomerMenus) GetList(where string, v ...interface{}) []CustomerMenus {
-	var items []CustomerMenus
-	db.Db.Where("is_deleted = 1").Where(where, v...).Order("order_no asc").Find(&items)
-	return buildCustomerTree(items, "")
-}
+// func (a *CustomerMenus) GetList(where string, v ...interface{}) []CustomerMenus {
+// 	var items []CustomerMenus
+// 	db.Db.Where("is_deleted = 1").Where(where, v...).Order("order_no asc").Find(&items)
+// 	return buildCustomerTree(items, "")
+// }
 
 // GetMenuTree 返回全部正常且启用的菜单树（不含被禁用或删除的）
 func CustomerMenuTree() []CustomerMenus {
+	// var items []CustomerMenus
+	// db.Db.Where("is_deleted = 1").Order("order_no asc").Find(&items)
+	// return buildCustomerTree(items, "")
+
 	var items []CustomerMenus
 	db.Db.Where("is_deleted = 1").Order("order_no asc").Find(&items)
-	return buildCustomerTree(items, "")
+	return buildTree(items, CustomerMenus{})
 }
 
 func CustomerMenuTreeByDepart(departId string) []CustomerMenus {
